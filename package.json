@@ -1,0 +1,42 @@
+{
+  "name": "formularios",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build --force"
+  },
+  "dependencies": {
+    "@firebase/firestore": "^4.6.3",
+    "axios": "^1.7.2",
+    "bootstrap": "^5.3.3",
+    "firebase": "^10.14.1",
+    "libphonenumber-js": "^1.11.4",
+    "vue": "^3.4.21",
+    "vue-country-region-select": "^2.0.16",
+    "vue-multiselect": "^3.0.0",
+    "vue-phone-number-input": "^1.12.13",
+    "vue-router": "^4.3.0",
+    "vue-select-image": "^1.9.0",
+    "vue-tel-input": "^9.1.4",
+    "vue3-toastify": "^0.2.1"
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^20.12.5",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vue/compiler-sfc": "^3.4.29",
+    "@vue/runtime-core": "^3.4.29",
+    "@vue/runtime-dom": "^3.4.29",
+    "@vue/tsconfig": "^0.5.1",
+    "npm-run-all2": "^6.1.2",
+    "typescript": "~5.4.0",
+    "vite": "^5.4.9",
+    "vue-tsc": "^2.0.11"
+  }
+}

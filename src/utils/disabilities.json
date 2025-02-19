@@ -1,0 +1,287 @@
+[
+  {
+    "id": 1,
+    "name_es": "Agorafobia",
+    "name_en": "Agoraphobia"
+  },
+  {
+    "id": 2,
+    "name_es": "Alzheimer",
+    "name_en": "Alzheimer's disease"
+  },
+  {
+    "id": 3,
+    "name_es": "Aneurisma",
+    "name_en": "Aneurysm"
+  },
+  {
+    "id": 4,
+    "name_es": "Apnea del sueño",
+    "name_en": "Sleep apnea"
+  },
+  {
+    "id": 5,
+    "name_es": "Arterioesclerosis",
+    "name_en": "Arteriosclerosis"
+  },
+  {
+    "id": 6,
+    "name_es": "Arteriopatia periferica u obliterante",
+    "name_en": "Peripheral arterial disease"
+  },
+  {
+    "id": 7,
+    "name_es": "Artritis psoriasica",
+    "name_en": "Psoriatic arthritis"
+  },
+  {
+    "id": 8,
+    "name_es": "Artritis reumatoide",
+    "name_en": "Rheumatoid arthritis"
+  },
+  {
+    "id": 9,
+    "name_es": "Artrosis",
+    "name_en": "Osteoarthritis"
+  },
+  {
+    "id": 10,
+    "name_es": "Asma",
+    "name_en": "Asthma"
+  },
+  {
+    "id": 11,
+    "name_es": "Caderas",
+    "name_en": "Hips"
+  },
+  {
+    "id": 12,
+    "name_es": "Cancer",
+    "name_en": "Cancer"
+  },
+  {
+    "id": 13,
+    "name_es": "Cancer de mama",
+    "name_en": "Breast cancer"
+  },
+  {
+    "id": 14,
+    "name_es": "Cancer de pulmon",
+    "name_en": "Lung cancer"
+  },
+  {
+    "id": 15,
+    "name_es": "Cancer de recto",
+    "name_en": "Rectal cancer"
+  },
+  {
+    "id": 16,
+    "name_es": "Cardiopatias",
+    "name_en": "Heart diseases"
+  },
+  {
+    "id": 17,
+    "name_es": "Charcot-Marie-Tooth",
+    "name_en": "Charcot-Marie-Tooth disease"
+  },
+  {
+    "id": 18,
+    "name_es": "Colitis Ulcerosa",
+    "name_en": "Ulcerative colitis"
+  },
+  {
+    "id": 19,
+    "name_es": "Demencia",
+    "name_en": "Dementia"
+  },
+  {
+    "id": 20,
+    "name_es": "Dermatitis",
+    "name_en": "Dermatitis"
+  },
+  {
+    "id": 21,
+    "name_es": "Desprendimiento de retina",
+    "name_en": "Retinal detachment"
+  },
+  {
+    "id": 22,
+    "name_es": "Enfermedad de Behcet",
+    "name_en": "Behçet's disease"
+  },
+  {
+    "id": 23,
+    "name_es": "Enfermedad de crohn",
+    "name_en": "Crohn's disease"
+  },
+  {
+    "id": 24,
+    "name_es": "Enfermedad de perthers",
+    "name_en": "Perthes disease"
+  },
+  {
+    "id": 25,
+    "name_es": "Efisema pulmonar",
+    "name_en": "Pulmonary emphysema"
+  },
+  {
+    "id": 26,
+    "name_es": "Epilepsia",
+    "name_en": "Epilepsy"
+  },
+  {
+    "id": 27,
+    "name_es": "Epoc",
+    "name_en": "COPD (Chronic obstructive pulmonary disease)"
+  },
+  {
+    "id": 28,
+    "name_es": "Esclerosis multiple",
+    "name_en": "Multiple sclerosis"
+  },
+  {
+    "id": 29,
+    "name_es": "Espondilitis anquilosante",
+    "name_en": "Ankylosing spondylitis"
+  },
+  {
+    "id": 30,
+    "name_es": "Esquizofrenia",
+    "name_en": "Schizophrenia"
+  },
+  {
+    "id": 31,
+    "name_es": "Fatiga cronica",
+    "name_en": "Chronic fatigue syndrome"
+  },
+  {
+    "id": 32,
+    "name_es": "Fibrilacion auricular",
+    "name_en": "Atrial fibrillation"
+  },
+  {
+    "id": 33,
+    "name_es": "Fibromialgia",
+    "name_en": "Fibromyalgia"
+  },
+  {
+    "id": 34,
+    "name_es": "Glaucoma",
+    "name_en": "Glaucoma"
+  },
+  {
+    "id": 35,
+    "name_es": "Gonartrosis",
+    "name_en": "Gonarthrosis"
+  },
+  {
+    "id": 36,
+    "name_es": "Hernia cervical",
+    "name_en": "Cervical hernia"
+  },
+  {
+    "id": 37,
+    "name_es": "Hipertension pulmonar",
+    "name_en": "Pulmonary hypertension"
+  },
+  {
+    "id": 38,
+    "name_es": "Hipoacusia",
+    "name_en": "Hearing loss"
+  },
+  {
+    "id": 39,
+    "name_es": "Ictus",
+    "name_en": "Stroke"
+  },
+  {
+    "id": 40,
+    "name_es": "Infarto agudo de miocardio",
+    "name_en": "Acute myocardial infarction"
+  },
+  {
+    "id": 41,
+    "name_es": "Insuficiencia mitral",
+    "name_en": "Mitral insufficiency"
+  },
+  {
+    "id": 42,
+    "name_es": "Lumbalgia",
+    "name_en": "Low back pain"
+  },
+  {
+    "id": 43,
+    "name_es": "Lupus eritematoso sistemico",
+    "name_en": "Systemic lupus erythematosus"
+  },
+  {
+    "id": 44,
+    "name_es": "Miastenia gravis",
+    "name_en": "Myasthenia gravis"
+  },
+  {
+    "id": 45,
+    "name_es": "Migraña",
+    "name_en": "Migraine"
+  },
+  {
+    "id": 46,
+    "name_es": "Neuropatia",
+    "name_en": "Neuropathy"
+  },
+  {
+    "id": 47,
+    "name_es": "Neuropatia optica",
+    "name_en": "Optic neuropathy"
+  },
+  {
+    "id": 48,
+    "name_es": "Obesidad morbida",
+    "name_en": "Morbid obesity"
+  },
+  {
+    "id": 49,
+    "name_es": "Pancreatitis",
+    "name_en": "Pancreatitis"
+  },
+  {
+    "id": 50,
+    "name_es": "Parkinson",
+    "name_en": "Parkinson's disease"
+  },
+  {
+    "id": 51,
+    "name_es": "Sarcoidosis",
+    "name_en": "Sarcoidosis"
+  },
+  {
+    "id": 52,
+    "name_es": "Sindrome de arnold chiari",
+    "name_en": "Arnold-Chiari syndrome"
+  },
+  {
+    "id": 53,
+    "name_es": "Sindrome de burnout",
+    "name_en": "Burnout syndrome"
+  },
+  {
+    "id": 54,
+    "name_es": "Taquicardias",
+    "name_en": "Tachycardia"
+  },
+  {
+    "id": 55,
+    "name_es": "Transtorno bipolar",
+    "name_en": "Bipolar disorder"
+  },
+  {
+    "id": 56,
+    "name_es": "Transtorno limite de personalidad",
+    "name_en": "Borderline personality disorder"
+  },
+  {
+    "id": 57,
+    "name_es": "Otro",
+    "name_en": "Other"
+  }
+]
