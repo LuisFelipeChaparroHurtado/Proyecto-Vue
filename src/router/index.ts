@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Confidencialidad from '@/views/confidencialidad.vue'
-import Concentimiento from '@/views/concentimiento.vue'
+import Consentimiento from '@/views/consentimiento.vue'
 import Register from '@/views/register.vue'
 import Login from '@/views/login.vue'
+import Principal from '@/views/principal.vue'
 
 
 const router = createRouter({
@@ -21,15 +22,21 @@ const router = createRouter({
       props: true
     },
     {
-      path: '/concentimiento',
-      name: 'concentimiento',
-      component: Concentimiento,
+      path: '/consentimiento',
+      name: 'consentimiento',
+      component: Consentimiento,
       props: true
     },
     {
       path: '/register',
       name: 'register',
       component: Register,
+      props: true
+    },
+    {
+      path: '/principal',
+      name: 'principal',
+      component: Principal,
       props: true
     }
   ]

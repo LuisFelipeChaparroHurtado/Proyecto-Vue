@@ -13,6 +13,7 @@ const globalOptions = {
   };
 const app = createApp(App)
 
+
 app.use(router)
 app.use( VueTelInput, globalOptions);
 app.mount('#app')

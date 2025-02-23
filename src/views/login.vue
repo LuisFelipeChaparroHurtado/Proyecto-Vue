@@ -56,7 +56,7 @@
  
 <style scoped>
 .login-container {
-  min-width: 400px;
+  width: 400px;
   margin: auto;
   padding: 20px;
   border: 1px solid #ddd;

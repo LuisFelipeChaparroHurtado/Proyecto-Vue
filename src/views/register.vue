@@ -1,25 +1,40 @@
 <template>
-    <div class="register">
-      <h2>Crear Cuenta</h2>
-      <form @submit.prevent="registerUser">
-        <input v-model="firstName" type="text" placeholder="Nombres" required />
-        <input v-model="lastName" type="text" placeholder="Apellidos" required />
-        <input v-model="email" type="email" placeholder="Correo electrónico" required />
-        <input v-model="password" type="password" placeholder="Contraseña" required />
-        <input v-model="confirm_password" type="password" placeholder="Confirmar contraseña" required />
-        
-        <button type="submit">Registrarse</button>
-        &nbsp;
-        <button type="button" @click="goToLogin">Iniciar sesión</button>
-      </form>
-      <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
-    </div>
+  <div class="register">
+    <h2>Crear Cuenta</h2>
+    <form @submit.prevent="registerUser">
+      <input v-model="firstName" type="text" placeholder="Nombres" required />
+      <input v-model="lastName" type="text" placeholder="Apellidos" required />
+      <input
+        v-model="email"
+        type="email"
+        placeholder="Correo electrónico"
+        required
+      />
+      <input
+        v-model="password"
+        type="password"
+        placeholder="Contraseña"
+        required
+      />
+      <input
+        v-model="confirm_password"
+        type="password"
+        placeholder="Confirmar contraseña"
+        required
+      />
+
+      <button type="submit">Registrarse</button>
+      &nbsp;
+      <button type="button" @click="goToLogin">Iniciar sesión</button>
+    </form>
+    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+  </div>
 </template>
 
 <script>
 import { ref } from "vue";
 import { useRouter } from "vue-router"; // Importar el router
-import { auth, createUserWithEmailAndPassword } from "../firebase";
+import { auth, createUserWithEmailAndPassword, updateProfile  } from "../firebase";
 
 export default {
   setup() {
@@ -39,7 +54,18 @@ export default {
       }
 
       try {
-        await createUserWithEmailAndPassword(auth, email.value, password.value);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email.value,
+          password.value
+        );
+        const user = userCredential.user;
+
+        // Actualizar el perfil del usuario con el nombre
+        await updateProfile(user, {
+          displayName: `${firstName.value} ${lastName.value}`,
+        });
+
         alert("Usuario creado correctamente");
         router.push("/"); // Redirige al login después de registrar
       } catch (error) {
@@ -51,14 +77,23 @@ export default {
       router.push("/"); // Redirige al login
     };
 
-    return { firstName, lastName, email, password, confirm_password, registerUser, errorMessage, goToLogin };
+    return {
+      firstName,
+      lastName,
+      email,
+      password,
+      confirm_password,
+      registerUser,
+      errorMessage,
+      goToLogin,
+    };
   },
 };
 </script>
 
 <style scoped>
 .register {
-  min-width: 500px;
+  width: 500px;
   margin: auto;
   padding: 20px;
   border: 1px solid #ddd;

@@ -1,9 +1,10 @@
 <template>
   <div>
       <!-- Etiqueta y selector de tamaño de texto -->
-      <label for="textSize">Tamaño del texto:</label>
+      <!-- <label for="textSize">Tamaño del texto:</label> -->
       <select id="textSize" v-model="selectedSize" @change="updateSize">
           <!-- Opciones del selector -->
+          <option value="" disabled selected>Selecciona un tamaño</option>
           <option value="Pequeña">Pequeña</option>
           <option value="Mediana">Mediana</option>
           <option value="Grande">Grande</option>
@@ -16,7 +17,7 @@
 export default {
   data() {
       return {
-          selectedSize: 'Mediana' // Tamaño seleccionado por defecto
+          selectedSize: '' // Tamaño seleccionado por defecto
       };
   },
   methods: {
