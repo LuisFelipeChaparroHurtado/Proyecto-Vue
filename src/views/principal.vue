@@ -62,6 +62,11 @@
             <button @click="goTo('/ajustes')" :class="textSizeClass">
               Editar Perfil
             </button>
+
+            <!-- Botón de Cerrar Sesión -->
+            <button @click="logout" :class="textSizeClass">
+              Cerrar Sesión
+            </button>
           </div>
         </div>
 
@@ -75,7 +80,7 @@
 
 <script>
 import { getDatabase, ref as dbRef, get } from "firebase/database";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
@@ -94,7 +99,7 @@ export default {
     const user = ref(null);
     const auth = getAuth();
     const router = useRouter();
-    const defaultProfilePic = "src/assets/profile_default.png";
+    const defaultProfilePic = "https://registration-c5bcd.web.app/profile_default.png";
     const form1Completed = ref(false);
     const form2Completed = ref(false);
 
@@ -109,15 +114,25 @@ export default {
 
           // Obtener referencia a la base de datos
           const database = getDatabase();
-          const consentRef = dbRef(
+          const confidencialidadRef = dbRef(
             database,
             `Confidencialidad/${loggedUser.uid}`
           );
+          const consentimientoRef = dbRef(
+            database,
+            `concentimiento/${loggedUser.uid}`
+          );
 
           try {
-            const snapshot = await get(consentRef);
-            // Si existen datos en la base de datos, marcamos el formulario como completado
-            form1Completed.value = snapshot.exists();
+            const [confidencialidadSnap, consentimientoSnap] =
+              await Promise.all([
+                get(confidencialidadRef),
+                get(consentimientoRef),
+              ]);
+
+            // Verificar si ambos formularios están completados
+            form1Completed.value = confidencialidadSnap.exists();
+            form2Completed.value = consentimientoSnap.exists();
           } catch (error) {
             console.error("Error al obtener datos de confidencialidad:", error);
           }
@@ -131,7 +146,16 @@ export default {
       router.push(route);
     };
 
-    return { user, goTo, form1Completed, form2Completed, defaultProfilePic };
+    const logout = async () => {
+      try {
+        await signOut(auth);
+        router.push("/"); // Redirigir al usuario a la pantalla de inicio de sesión
+      } catch (error) {
+        console.error("Error al cerrar sesión:", error);
+      }
+    };
+
+    return { user, goTo, form1Completed, form2Completed, defaultProfilePic, logout };
   },
 };
 </script>

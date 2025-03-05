@@ -515,18 +515,18 @@
         <form @submit.prevent="submit" v-if="selectedLanguage === 'es'">
           <div class="card">
             <div class="row">
-              <label> Correo </label>
+              <label>Correo</label>
               <input
                 type="text"
                 v-model="formConfidencialidad.email"
-                @blur="validateEmail"
                 id="email"
                 placeholder="example@mail.com"
                 required
+                readonly
               />
-              <span v-if="!isValidEmail" style="color: red"
-                >Por favor ingrese un correo electrónico válido.</span
-              >
+              <span v-if="!isValidEmail" style="color: red">
+                Por favor ingrese un correo electrónico válido.
+              </span>
             </div>
             <div class="row">
               <label>Discapacidades</label>
@@ -630,17 +630,35 @@
                 </option>
               </select>
             </div>
-            <div class="row">
-              <label for="fileInput"
-                >Subir un documento de identidad (PDF o imagen):</label
-              >
+
+
+            <div class="file-row">
+              <label for="fileInput" class="file-label">
+                Subir un documento de identidad (PDF o imagen):
+              </label>
+
               <input
                 type="file"
+                class="file-input"
                 id="fileInput"
                 accept=".pdf, image/*"
                 @change="handleFileChange"
               />
+
+              <div v-if="formConfidencialidad.fileUrl" class="file-preview">
+                <a :href="formConfidencialidad.fileUrl" target="_blank">
+                  <span v-if="isImage(formConfidencialidad.fileUrl)">
+                    <img
+                      :src="formConfidencialidad.fileUrl"
+                      alt="Documento cargado"
+                      class="file-thumbnail"
+                    />
+                  </span>
+                  <span v-else class="btn-view">📄</span>
+                </a>
+              </div>
             </div>
+
             <div class="row">
               <div class="confirm">
                 <label for=""
@@ -667,7 +685,7 @@
             </div>
             <div class="button">
               <button class="btn btn-primary" type="submit" @click="submit()">
-                Enviar
+                {{ consentExists ? "Actualizar" : "Enviar" }}
               </button>
             </div>
           </div>
@@ -675,18 +693,18 @@
         <form @submit.prevent="submit" v-if="selectedLanguage === 'en'">
           <div class="card">
             <div class="row">
-              <label> Email </label>
+              <label>Email</label>
               <input
                 type="text"
                 v-model="formConfidencialidad.email"
-                @blur="validateEmail"
                 id="email"
                 placeholder="example@mail.com"
                 required
+                readonly
               />
-              <span v-if="!isValidEmail" style="color: red"
-                >Please place a valid email.</span
-              >
+              <span v-if="!isValidEmail" style="color: red">
+                Please place a valid email.
+              </span>
             </div>
             <div class="row">
               <label>Disabilities</label>
@@ -825,7 +843,7 @@
             </div>
             <div class="button">
               <button class="btn btn-primary" type="submit" @click="submit()">
-                Send
+                {{ consentExists ? "Update" : "Submit" }}
               </button>
             </div>
           </div>
@@ -838,7 +856,7 @@
 // Importación de componentes y librerías necesarias
 import Multiselect from "vue-multiselect"; // Componente de selección múltiple
 import "vue-multiselect/dist/vue-multiselect.esm.css"; // Estilos del componente Multiselect
-import { defineComponent, ref } from "vue"; // Función para definir componentes en Vue
+import { defineComponent, ref, onMounted } from "vue"; // Función para definir componentes en Vue
 import countries from "@/utils/countryInfo.json"; // Datos de países desde un archivo JSON
 import disabilities from "@/utils/disabilities.json"; // Datos de discapacidades desde un archivo JSON
 import VueCountryRegionSelect from "vue-country-region-select"; // Componente para selección de país y región
@@ -849,8 +867,8 @@ import "vue3-toastify/dist/index.css"; // Estilos para las notificaciones tipo t
 import { VueTelInput } from "vue-tel-input";
 
 // Importación correcta de Firebase Database y Auth
-import { getDatabase, ref as dbRef, get, set } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { getDatabase, ref as dbRef, get, set, update } from "firebase/database";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export default defineComponent({
   components: {
@@ -871,10 +889,23 @@ export default defineComponent({
   },
   setup() {
     const phone = ref(null);
+    const formConfidencialidad = ref({
+      email: "",
+      disability: [], // <- Asegúrate de que esta propiedad existe si `isOtroSelected` la usa
+    });
 
-    return {
-      phone,
-    };
+    const isValidEmail = ref(true);
+    const auth = getAuth();
+
+    onMounted(() => {
+      onAuthStateChanged(auth, (loggedUser) => {
+        if (loggedUser) {
+          formConfidencialidad.value.email = loggedUser.email || "";
+        }
+      });
+    });
+
+    return { formConfidencialidad, isValidEmail, phone };
   },
   data() {
     return {
@@ -934,14 +965,14 @@ export default defineComponent({
         const database = getDatabase();
         const consentRef = dbRef(database, `Confidencialidad/${uid}`);
 
-        // Consultar Firebase
         const snapshot = await get(consentRef);
         if (snapshot.exists()) {
-          // Si hay datos, rellenar el formulario con ellos
+          console.log("Datos encontrados en Firebase:", snapshot.val());
           this.formConfidencialidad = {
             ...this.formConfidencialidad,
             ...snapshot.val(),
           };
+          this.consentExists = true; // Indica que el consentimiento ya existe
         }
       }
     } catch (error) {
@@ -949,26 +980,34 @@ export default defineComponent({
     }
   },
   computed: {
-    // Método computado para verificar si 'Otro' está seleccionado en la lista de discapacidades
     isOtroSelected() {
-      return this.formConfidencialidad.disability.some(
-        (option) => option.name_es === "Otro" || option.name_en === "Other"
+      return (
+        Array.isArray(this.formConfidencialidad.disability) &&
+        this.formConfidencialidad.disability.some(
+          (option) => option.name_es === "Otro" || option.name_en === "Other"
+        )
       );
     },
   },
+
   watch: {
     // Observador para cambios en la lista de discapacidades
-    disability() {
+    "formConfidencialidad.disability": function () {
       this.checkOptions();
     },
-    // Observador para cambios en el formulario
+
+    // Observador para cambios en el formulario completo
     formConfidencialidad: {
-      handler() {
-        this.validateForm();
+      handler(newVal, oldVal) {
+        if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
+          this.validateForm();
+        }
       },
       deep: true,
+      immediate: true, // Opcional: ejecuta validateForm() al montar el componente
     },
   },
+
   methods: {
     toggleLanguage() {
       const languageSelect = document.getElementById("languageSelect").value;
@@ -991,8 +1030,8 @@ export default defineComponent({
     // Método para verificar opciones seleccionadas, especialmente 'Otro'
     checkOptions() {
       this.showTextField =
-        this.formConfidencialidad.disabilities.includes("Otro");
-      console.log(this.showTextField); // Depuración: muestra el estado de showTextField
+        Array.isArray(this.formConfidencialidad.disability) &&
+        this.formConfidencialidad.disability.includes("Otro");
     },
     // Método para actualizar el número de teléfono según el código de país
     updatePhoneNumber() {
@@ -1017,9 +1056,15 @@ export default defineComponent({
         }
       }
     },
-    // Método para manejar el cambio de archivos
+
     handleFileChange(event) {
-      this.formConfidencialidad.file = event.target.files[0];
+      const file = event.target.files[0];
+      if (file) {
+        this.formConfidencialidad.file = file; // Guarda el nuevo archivo
+      }
+    },
+    isImage(fileUrl) {
+      return /\.(jpeg|jpg|png|gif)$/i.test(fileUrl);
     },
     // Método para validar todo el formulario
     validateForm() {
@@ -1052,9 +1097,9 @@ export default defineComponent({
       if (!address) {
         this.errorMessages.push("La dirección es requerida.");
       }
-      // if (!file) {
-      //   this.errorMessages.push('El archivo es requerido.');
-      // }
+      if (!file) {
+        this.errorMessages.push("El archivo es requerido.");
+      }
       if (!confirmacion) {
         this.errorMessages.push("La confirmación es requerida.");
       }
@@ -1070,32 +1115,56 @@ export default defineComponent({
 
       this.formValid = this.errorMessages.length === 0; // Actualiza el estado de validez del formulario
     },
-    // Método para enviar el formulario
     async submit() {
+      if (this.isSubmitting) return; // Evita múltiples clics
+      this.isSubmitting = true;
+
       this.validateForm();
       if (!this.formValid) {
         this.errorMessages.forEach((message) =>
           toast.error(message, { autoClose: 2000 })
         );
+        this.isSubmitting = false;
         return;
       }
 
       const auth = getAuth();
       const currentUser = auth.currentUser;
-
       if (!currentUser) {
         toast.error("No hay usuario autenticado.");
+        this.isSubmitting = false;
         return;
       }
 
-      const uid = currentUser.uid; // Obtiene el UID del usuario autenticado
-      const database = getDatabase(); // Obtiene la instancia de la base de datos
+      const file = this.formConfidencialidad.file;
+      let fileUrl = "";
 
-      // Usamos `dbRef` en lugar de `ref` para evitar el conflicto
+      // Subir archivo al almacenamiento de Firebase si existe
+      if (file) {
+        const sanitizedFileName = file.name.replace(/\s+/g, "_"); // Reemplaza espacios con "_"
+        const storageReference = storageRef(
+          storage,
+          `filesConfidencialidad/${sanitizedFileName}`
+        );
+
+        try {
+          const snapshot = await uploadBytes(storageReference, file);
+          fileUrl = await getDownloadURL(snapshot.ref); // Obtiene la URL del archivo
+          //toast.success("Archivo subido correctamente.");
+        } catch (error) {
+          console.error("Error al subir el archivo:", error);
+          toast.error("Error al subir el archivo.");
+          this.isSubmitting = false;
+          return; // Termina la función si hay un error
+        }
+      }
+
+      const uid = currentUser.uid;
+      const database = getDatabase();
       const consentRef = dbRef(database, `Confidencialidad/${uid}`);
 
       const dataToSend = {
-        userId: uid, // Guardar el UID del usuario
+        userId: uid,
         name: this.formConfidencialidad.name,
         confirmacion: this.formConfidencialidad.confirmacion,
         disability: this.formConfidencialidad.disability,
@@ -1104,20 +1173,41 @@ export default defineComponent({
         country: this.formConfidencialidad.country,
         phoneNumber: this.formConfidencialidad.phoneNumber,
         address: this.formConfidencialidad.address,
-        timestamp: new Date().toISOString(), // Guarda la fecha y hora del envío
+        timestamp: new Date().toISOString(),
+        fileUrl: fileUrl, // Guardamos la URL del archivo subido
       };
 
       try {
-        await set(consentRef, dataToSend); // Guarda los datos con el UID
-        toast.success("Se han almacenado los datos correctamente", {
-          autoClose: 2000,
-        });
+        const snapshot = await get(consentRef);
+        const mensaje = snapshot.exists()
+          ? "Confidencialidad actualizado correctamente"
+          : "Confidencialidad enviado correctamente";
 
-        // Guardar en localStorage para evitar otra consulta
+        if (snapshot.exists()) {
+          await update(consentRef, dataToSend);
+        } else {
+          await set(consentRef, dataToSend);
+        }
+
+        this.consentExists = true;
         localStorage.setItem("Confidencialidad", "true");
-      } catch {
+
+        toast.success(mensaje, { autoClose: 1000 });
+
+        setTimeout(() => {
+          this.$router.push("/principal");
+        }, 1500);
+      } catch (error) {
+        console.error("Error al enviar los datos:", error);
         toast.error("Error al enviar los datos");
+      } finally {
+        this.isSubmitting = false; // Restablece la bandera
       }
+    },
+    data() {
+      return {
+        isSubmitting: false, // Evita doble ejecución de `submit()`
+      };
     },
   },
 });
@@ -1206,6 +1296,65 @@ multiselect {
   /* Centra el texto del botón horizontalmente */
   margin-top: 1rem;
   /* Espacio superior de 1 rem */
+}
+
+.file-row {
+  display: flex;
+  align-items: center; /* Alinea verticalmente todos los elementos */
+  gap: 15px; /* Espacio entre elementos */
+}
+
+.file-label {
+  white-space: nowrap; /* Evita que el texto del label se divida en varias líneas */
+}
+
+.file-input {
+  flex-grow: 1; /* Permite que el input se ajuste al espacio disponible */
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+}
+
+.file-thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.prueba {
+  /* Ancho completo para input tipo texto, select y multiselect */
+  padding: 0.5rem;
+  /* Relleno de 0.5 rem para estos elementos */
+  border: 1px solid #ccc;
+  /* Borde de 1 píxel sólido en color gris */
+  border-radius: 4px;
+  /* Borde redondeado con un radio de 4 píxeles */
+  box-sizing: border-box;
+  /* Caja de tamaño de borde */
+}
+
+.file-button {
+  text-decoration: none;
+}
+
+.btn-view {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-view:hover {
+  background-color: #0056b3;
 }
 
 @media (max-width: 768px) {

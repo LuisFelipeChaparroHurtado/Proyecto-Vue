@@ -40,7 +40,7 @@
         try {
           const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password);
           console.log("Usuario autenticado:", userCredential.user);
-          this.$router.push("/confidencialidad"); // Redirige a otra vista después de iniciar sesión
+          this.$router.push("/principal"); // Redirige a otra vista después de iniciar sesión
         } catch (error) {
           this.errorMessage = "Error al iniciar sesión: " + error.message;
         }

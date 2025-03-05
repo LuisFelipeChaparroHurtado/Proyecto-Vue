@@ -7,6 +7,8 @@ import VueTelInput from 'vue-tel-input';
 import 'vue-tel-input/vue-tel-input.css';
 import 'bootstrap'
 import 'bootstrap/dist/css/bootstrap.min.css'
+import "@fortawesome/fontawesome-free/css/all.css";
+
 
 const globalOptions = {
     mode: 'auto',
