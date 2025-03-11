@@ -61,16 +61,21 @@
     <div v-if="showModal" class="modal">
       <div class="modal-content">
         <h3>Avances de {{ selectedUserName }}</h3>
-        <ul v-if="userAdvances.length">
-          <li v-for="advance in userAdvances" :key="advance.id">
-            📄 <strong>{{ advance.name }}</strong>
-            <br />
-            📅 <small>{{ formatDateModal(advance.timestamp) }}</small>
-            <br />
-            🔗 <a :href="advance.url" target="_blank">Ver archivo</a>
-          </li>
-        </ul>
-        <p v-else>No hay avances disponibles</p>
+
+        <!-- Contenedor con scroll solo vertical -->
+        <div class="scroll-container">
+          <ul v-if="userAdvances.length">
+            <li v-for="advance in userAdvances" :key="advance.id">
+              📄 <strong>{{ advance.name }}</strong>
+              <br />
+              📅 <small>{{ formatDateModal(advance.timestamp) }}</small>
+              <br />
+              🔗 <a :href="advance.url" target="_blank">Ver archivo</a>
+            </li>
+          </ul>
+          <p v-else>No hay avances disponibles</p>
+        </div>
+
         <button class="close-btn" @click="showModal = false">Cerrar</button>
       </div>
     </div>
@@ -229,7 +234,7 @@ export default {
       goToRegister,
       goLogout,
       formatDate,
-      formatDateModal
+      formatDateModal,
     };
   },
 };
@@ -349,4 +354,52 @@ button {
   margin-top: 15px;
   width: 100%;
 }
+
+.modal-content {
+  max-width: 500px; /* Ancho máximo del modal */
+  max-height: 70vh; /* Altura máxima del modal */
+  overflow: hidden; /* Evita cualquier overflow */
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  text-align: center;
+  word-wrap: break-word; /* Evita desbordes de texto largos */
+}
+
+/* Contenedor con scroll solo vertical */
+.scroll-container {
+  max-height: 50vh; /* Ajusta según el diseño */
+  overflow-y: auto; /* Solo scroll vertical */
+  overflow-x: hidden; /* Evita scroll horizontal */
+  padding-right: 5px;
+}
+
+/* Asegurar que los elementos dentro no hagan scroll horizontal */
+ul {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+  width: 100%; /* Asegura que la lista no sea más ancha que su contenedor */
+  word-wrap: break-word; /* Evita desbordes de texto */
+}
+
+/* Evitar que los enlaces rompan el diseño */
+a {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Personalizar barra de scroll */
+.scroll-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scroll-container::-webkit-scrollbar-thumb {
+  background-color: #1f3983;
+  border-radius: 4px;
+}
+
 </style>

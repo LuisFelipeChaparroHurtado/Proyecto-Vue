@@ -6,11 +6,7 @@
       <div class="profile-grid">
         <div class="centradoVertical">
           <div class="profile-pic-section">
-            <img
-              :src="photoPreview || photoURL"
-              alt="Foto de perfil"
-              class="profile-pic"
-            />
+            <img :src="photoPreview || photoURL" alt="Foto de perfil" class="profile-pic" />
             <input type="file" @change="handleFileUpload" accept="image/*" />
           </div>
         </div>
@@ -23,21 +19,12 @@
 
           <div class="form-group">
             <label for="currentPassword">Contraseña Actual</label>
-            <input
-              v-model="currentPassword"
-              type="password"
-              id="currentPassword"
-            />
+            <input v-model="currentPassword" type="password" id="currentPassword" />
           </div>
 
           <div class="form-group">
             <label for="newPassword">Nueva Contraseña</label>
-            <input
-              v-model="newPassword"
-              type="password"
-              id="newPassword"
-              placeholder="Dejar en blanco para no cambiar"
-            />
+            <input v-model="newPassword" type="password" id="newPassword" placeholder="Dejar en blanco para no cambiar" />
           </div>
 
           <button @click="updateProfile" :disabled="isUpdating">
@@ -46,9 +33,7 @@
           <button @click="goBack">Cancelar</button>
 
           <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-          <p v-if="successMessage" class="success-message">
-            {{ successMessage }}
-          </p>
+          <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
         </div>
       </div>
     </div>
@@ -64,26 +49,29 @@ import {
   EmailAuthProvider,
 } from "firebase/auth";
 import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
+import {
   getStorage,
   ref as storageRef,
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
   setup() {
     const auth = getAuth();
+    const db = getFirestore();
     const storage = getStorage();
     const router = useRouter();
 
-    // Datos del usuario
-    const newDisplayName = ref(auth.currentUser?.displayName || "");
-    const photoURL = ref(
-      auth.currentUser?.photoURL ||
-        "https://registration-c5bcd.web.app/profile_default.png"
-    );
+    const newDisplayName = ref("");
+    const photoURL = ref("https://registration-c5bcd.web.app/profile_default.png");
     const photoPreview = ref(null);
     const selectedFile = ref(null);
     const currentPassword = ref("");
@@ -92,7 +80,23 @@ export default {
     const successMessage = ref("");
     const isUpdating = ref(false);
 
-    // Manejador de subida de archivos
+    const loadUserData = async () => {
+      if (!auth.currentUser) return;
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        newDisplayName.value = userData.firstName || "";
+        photoURL.value = userData.photoURL || "https://registration-c5bcd.web.app/profile_default.png";
+
+        console.log("photoURL al cargar datos del usuario:", photoURL.value);
+      }
+    };
+
+    onMounted(() => {
+      loadUserData();
+    });
+
     const handleFileUpload = (event) => {
       const file = event.target.files[0];
       if (file) {
@@ -105,20 +109,14 @@ export default {
       }
     };
 
-    // Reautenticar usuario
     const reauthenticateUser = async () => {
-      const user = auth.currentUser;
-      if (!user || !currentPassword.value) {
+      if (!auth.currentUser || !currentPassword.value) {
         throw new Error("Debes ingresar tu contraseña actual.");
       }
-      const credential = EmailAuthProvider.credential(
-        user.email,
-        currentPassword.value
-      );
-      await reauthenticateWithCredential(user, credential);
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword.value);
+      await reauthenticateWithCredential(auth.currentUser, credential);
     };
 
-    // Función para actualizar perfil
     const updateProfileHandler = async () => {
       if (!auth.currentUser) {
         errorMessage.value = "No hay usuario autenticado.";
@@ -128,41 +126,37 @@ export default {
       isUpdating.value = true;
       errorMessage.value = "";
       successMessage.value = "";
-      let newPhotoURL = auth.currentUser.photoURL;
+      let newPhotoURL = photoURL.value;
 
       try {
-        // Reautenticación antes de cambios sensibles
-        if (newPassword.value) {
-          await reauthenticateUser();
-        }
+        const userRef = doc(db, "users", auth.currentUser.uid);
 
-        // Si hay una nueva foto, subirla a Firebase Storage
         if (selectedFile.value) {
-          const fileRef = storageRef(
-            storage,
-            `profilePictures/${auth.currentUser.uid}`
-          );
+          const fileRef = storageRef(storage, `profilePictures/${auth.currentUser.uid}`);
           await uploadBytes(fileRef, selectedFile.value);
           newPhotoURL = await getDownloadURL(fileRef);
         }
 
-        // Actualizar nombre y foto
         await updateProfile(auth.currentUser, {
           displayName: newDisplayName.value,
           photoURL: newPhotoURL,
         });
 
-        // Actualizar contraseña si el usuario ingresó una nueva
+        await setDoc(userRef, {
+          firstName: newDisplayName.value,
+          photoURL: newPhotoURL,
+        }, { merge: true });
+
         if (newPassword.value) {
+          await reauthenticateUser();
           await updatePassword(auth.currentUser, newPassword.value);
         }
 
-        // Limpiar campos y actualizar interfaz
         photoURL.value = newPhotoURL;
         photoPreview.value = null;
         newPassword.value = "";
         currentPassword.value = "";
-
+        successMessage.value = "Perfil actualizado con éxito.";
         router.push("/principal");
       } catch (error) {
         errorMessage.value = "Error al actualizar el perfil: " + error.message;
@@ -191,6 +185,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 .card {
   width: 100%;
@@ -212,17 +207,16 @@ export default {
 .profile-grid {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* Ajusta la altura de ambas columnas */
+  align-items: center;
   gap: 20px;
-  min-height: 300px; /* Ajusta según sea necesario */
+  min-height: 300px;
 }
-
 
 .profile-pic-section {
   flex: 2;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centra horizontalmente */
+  align-items: center;
   justify-content: center;
 }
 
@@ -282,25 +276,5 @@ button:hover {
 .success-message {
   color: green;
   margin-top: 10px;
-}
-
-.centradoVertical {
-  display: flex;
-  margin-top: -50px;
-  align-items: center; /* Centra verticalmente */
-  justify-content: center; /* Opcional: Centra horizontalmente */
-  height: 100%; /* Asegura que tome toda la altura disponible */
-}
-
-
-@media (max-width: 600px) {
-  .profile-grid {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .profile-form {
-    width: 100%;
-  }
 }
 </style>

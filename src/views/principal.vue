@@ -17,25 +17,17 @@
           <div class="profile-section">
             <h2 class="title" :class="textSizeClass">Perfil de Usuario</h2>
             <div class="profile-pic-container">
-              <img
-                :src="user.photoURL || defaultProfilePic"
-                alt="Foto de perfil"
-                class="profile-pic"
-              />
+              <img :src="user.photoURL || defaultProfilePic" alt="Foto de perfil" class="profile-pic" />
             </div>
-            <p>
-              <strong>Usuario:</strong> {{ user.displayName || "Sin nombre" }}
-            </p>
+            <p><strong>Usuario:</strong> {{ user.displayName || "Sin nombre" }}</p>
             <p><strong>Email:</strong> {{ user.email }}</p>
           </div>
 
           <div class="menu">
-            <button
-              @click="!form1Completed ? goTo('/confidencialidad') : null"
-              :class="textSizeClass"
-              class="form-button"
-              :disabled="form1Completed"
-            >
+            <button @click="!form1Completed ? goTo('/confidencialidad') : null"
+                    :class="textSizeClass"
+                    class="form-button"
+                    :disabled="form1Completed">
               <span class="button-text">
                 Formulario de Confidencialidad
                 <span v-if="form1Completed" class="checkmark">✔️</span>
@@ -45,12 +37,10 @@
               </div>
             </button>
 
-            <button
-              @click="!form2Completed ? goTo('/consentimiento') : null"
-              :class="textSizeClass"
-              class="form-button"
-              :disabled="form2Completed"
-            >
+            <button @click="!form2Completed ? goTo('/consentimiento') : null"
+                    :class="textSizeClass"
+                    class="form-button"
+                    :disabled="form2Completed">
               <span class="button-text">
                 Formulario de Consentimiento
                 <span v-if="form2Completed" class="checkmark">✔️</span>
@@ -60,15 +50,9 @@
               </div>
             </button>
 
-            <button @click="goTo('/subirArchivos')" :class="textSizeClass">
-              Avances de proyecto
-            </button>
-            <button @click="goTo('/editarPerfil')" :class="textSizeClass">
-              Editar Perfil
-            </button>
-            <button @click="logout" :class="textSizeClass">
-              Cerrar Sesión
-            </button>
+            <button @click="goTo('/subirArchivos')" :class="textSizeClass">Avances de proyecto</button>
+            <button @click="goTo('/editarPerfil')" :class="textSizeClass">Editar Perfil</button>
+            <button @click="logout" :class="textSizeClass">Cerrar Sesión</button>
           </div>
         </div>
         <div v-else>
@@ -81,7 +65,8 @@
 
 <script>
 import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
+import { getStorage, ref as storageRef, getDownloadURL } from "firebase/storage";
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -90,29 +75,40 @@ export default {
     const user = ref(null);
     const auth = getAuth();
     const router = useRouter();
-    const defaultProfilePic =
-      "https://registration-c5bcd.web.app/profile_default.png";
+    const defaultProfilePic = "https://registration-c5bcd.web.app/profile_default.png";
     const form1Completed = ref(false);
     const form2Completed = ref(false);
     const showWelcomeModal = ref(false);
+    const storage = getStorage();
 
     onMounted(() => {
+
+      
       onAuthStateChanged(auth, async (loggedUser) => {
         if (loggedUser) {
+
+          let photoURL = defaultProfilePic; // Imagen por defecto
+
+          try {
+            const profilePicRef = storageRef(storage, `profilePictures/${loggedUser.uid}`);
+            photoURL = await getDownloadURL(profilePicRef);
+          } catch (error) {
+            console.warn("No se encontró la imagen en Storage, usando la predeterminada.");
+          }
+
           user.value = {
             displayName: loggedUser.displayName,
             email: loggedUser.email,
-            photoURL: loggedUser.photoURL || defaultProfilePic,
+            photoURL: photoURL,
           };
 
-          // Verificar si ya se mostró la modal de bienvenida
-          const welcomeShown = sessionStorage.getItem("welcomeShown");
-          if (!welcomeShown) {
+          // Mostrar modal solo si es la primera vez
+          if (!sessionStorage.getItem("welcomeShown")) {
             showWelcomeModal.value = true;
             sessionStorage.setItem("welcomeShown", "true");
           }
 
-          // 🔥 Consultar Firestore para verificar si los formularios están completos
+          // Consultar Firestore para verificar formularios completados
           const db = getFirestore();
           const confidencialidadRef = doc(db, "Confidencialidad", loggedUser.uid);
           const consentimientoRef = doc(db, "Consentimiento", loggedUser.uid);
@@ -133,6 +129,16 @@ export default {
         }
       });
     });
+
+    watch(
+      () => auth.currentUser?.photoURL,
+      (newPhotoURL) => {
+        if (newPhotoURL) {
+          console.log("Nueva foto detectada:", newPhotoURL);
+          user.value.photoURL = newPhotoURL;
+        }
+      }
+    );
 
     const goTo = (route) => {
       router.push(route);
@@ -156,10 +162,6 @@ export default {
       showWelcomeModal.value = false;
     };
 
-    watch(showWelcomeModal, (newValue) => {
-      document.body.style.overflow = newValue ? "hidden" : "";
-    });
-
     return {
       user,
       goTo,
@@ -172,8 +174,8 @@ export default {
     };
   },
 };
-
 </script>
+
 
 <style scoped>
 .form-button {
