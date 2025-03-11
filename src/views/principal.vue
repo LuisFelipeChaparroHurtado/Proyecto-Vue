@@ -1,9 +1,19 @@
 <template>
   <div :class="textSizeClass">
+    <!-- Modal de bienvenida -->
+    <div v-if="showWelcomeModal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>¡Bienvenido, {{ user?.displayName || "Usuario" }}!</h2>
+        <p>Nos alegra verte aquí.</p>
+        <div class="centrado-boton">
+          <button @click="closeModal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <div class="card content">
       <div class="container">
         <div v-if="user" class="profile-menu-container">
-          <!-- Columna de la foto de perfil (40%) -->
           <div class="profile-section">
             <h2 class="title" :class="textSizeClass">Perfil de Usuario</h2>
             <div class="profile-pic-container">
@@ -19,7 +29,6 @@
             <p><strong>Email:</strong> {{ user.email }}</p>
           </div>
 
-          <!-- Columna de los botones (60%) -->
           <div class="menu">
             <button
               @click="!form1Completed ? goTo('/confidencialidad') : null"
@@ -31,9 +40,7 @@
                 Formulario de Confidencialidad
                 <span v-if="form1Completed" class="checkmark">✔️</span>
               </span>
-
               <div v-if="form1Completed" class="action-buttons">
-                <button @click.stop="downloadPDF">📄</button>
                 <button @click.stop="goTo('/confidencialidad')">✏️</button>
               </div>
             </button>
@@ -48,28 +55,22 @@
                 Formulario de Consentimiento
                 <span v-if="form2Completed" class="checkmark">✔️</span>
               </span>
-
               <div v-if="form2Completed" class="action-buttons">
-                <button @click.stop="downloadPDF">📄</button>
                 <button @click.stop="goTo('/consentimiento')">✏️</button>
               </div>
             </button>
 
-            <button @click="goTo('/perfil')" :class="textSizeClass">
+            <button @click="goTo('/subirArchivos')" :class="textSizeClass">
               Avances de proyecto
             </button>
-
-            <button @click="goTo('/ajustes')" :class="textSizeClass">
+            <button @click="goTo('/editarPerfil')" :class="textSizeClass">
               Editar Perfil
             </button>
-
-            <!-- Botón de Cerrar Sesión -->
             <button @click="logout" :class="textSizeClass">
               Cerrar Sesión
             </button>
           </div>
         </div>
-
         <div v-else>
           <p>No hay usuario autenticado</p>
         </div>
@@ -79,31 +80,23 @@
 </template>
 
 <script>
-import { getDatabase, ref as dbRef, get } from "firebase/database";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
-  props: {
-    textSizeClass: {
-      type: String,
-      default: "medium-text",
-    },
-    selectedLanguage: {
-      type: String,
-      required: true,
-    },
-  },
   setup() {
     const user = ref(null);
     const auth = getAuth();
     const router = useRouter();
-    const defaultProfilePic = "https://registration-c5bcd.web.app/profile_default.png";
+    const defaultProfilePic =
+      "https://registration-c5bcd.web.app/profile_default.png";
     const form1Completed = ref(false);
     const form2Completed = ref(false);
+    const showWelcomeModal = ref(false);
 
-    onMounted(async () => {
+    onMounted(() => {
       onAuthStateChanged(auth, async (loggedUser) => {
         if (loggedUser) {
           user.value = {
@@ -112,29 +105,28 @@ export default {
             photoURL: loggedUser.photoURL || defaultProfilePic,
           };
 
-          // Obtener referencia a la base de datos
-          const database = getDatabase();
-          const confidencialidadRef = dbRef(
-            database,
-            `Confidencialidad/${loggedUser.uid}`
-          );
-          const consentimientoRef = dbRef(
-            database,
-            `concentimiento/${loggedUser.uid}`
-          );
+          // Verificar si ya se mostró la modal de bienvenida
+          const welcomeShown = sessionStorage.getItem("welcomeShown");
+          if (!welcomeShown) {
+            showWelcomeModal.value = true;
+            sessionStorage.setItem("welcomeShown", "true");
+          }
+
+          // 🔥 Consultar Firestore para verificar si los formularios están completos
+          const db = getFirestore();
+          const confidencialidadRef = doc(db, "Confidencialidad", loggedUser.uid);
+          const consentimientoRef = doc(db, "Consentimiento", loggedUser.uid);
 
           try {
-            const [confidencialidadSnap, consentimientoSnap] =
-              await Promise.all([
-                get(confidencialidadRef),
-                get(consentimientoRef),
-              ]);
+            const [confidencialidadSnap, consentimientoSnap] = await Promise.all([
+              getDoc(confidencialidadRef),
+              getDoc(consentimientoRef),
+            ]);
 
-            // Verificar si ambos formularios están completados
             form1Completed.value = confidencialidadSnap.exists();
             form2Completed.value = consentimientoSnap.exists();
           } catch (error) {
-            console.error("Error al obtener datos de confidencialidad:", error);
+            console.error("Error al obtener datos de Firestore:", error);
           }
         } else {
           user.value = null;
@@ -149,15 +141,38 @@ export default {
     const logout = async () => {
       try {
         await signOut(auth);
-        router.push("/"); // Redirigir al usuario a la pantalla de inicio de sesión
+        sessionStorage.removeItem("welcomeShown");
+        router.push("/");
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 200);
       } catch (error) {
         console.error("Error al cerrar sesión:", error);
       }
     };
 
-    return { user, goTo, form1Completed, form2Completed, defaultProfilePic, logout };
+    const closeModal = () => {
+      showWelcomeModal.value = false;
+    };
+
+    watch(showWelcomeModal, (newValue) => {
+      document.body.style.overflow = newValue ? "hidden" : "";
+    });
+
+    return {
+      user,
+      goTo,
+      form1Completed,
+      form2Completed,
+      defaultProfilePic,
+      logout,
+      showWelcomeModal,
+      closeModal,
+    };
   },
 };
+
 </script>
 
 <style scoped>
@@ -285,7 +300,59 @@ button:hover {
   color: #28a745;
 }
 
-/* Diseño responsive para pantallas pequeñas */
+/* Modal de bienvenida */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  color: black;
+  font-weight: bold;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  width: 700px;
+}
+
+.modal-content h2 {
+  margin-bottom: 10px;
+}
+
+.modal-content button {
+  background: #1f3983;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.modal-content button:hover {
+  background: #14245c;
+}
+
+.checkmark {
+  margin-left: 8px;
+  font-size: 1.2rem;
+  color: #28a745;
+}
+
+.centrado-boton {
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .profile-menu-container {
     flex-direction: column;

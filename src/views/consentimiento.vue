@@ -311,16 +311,31 @@
               placeholder="Ingrese su dirección"
             />
           </div>
-          <div class="row">
-            <label for="fileInput"
-              >Subir un documento de identidad (PDF o imagen):</label
-            >
+          <div class="file-row">
+            <label for="fileInput" class="file-label">
+              Subir un documento de identidad (PDF o imagen):
+            </label>
+
             <input
               type="file"
+              class="file-input"
               id="fileInput"
               accept=".pdf, image/*"
               @change="handleFileChange"
             />
+
+            <div v-if="formConcentimiento.fileUrl" class="file-preview">
+              <a :href="formConcentimiento.fileUrl" target="_blank">
+                <span v-if="isImage(formConcentimiento.fileUrl)">
+                  <img
+                    :src="formConcentimiento.fileUrl"
+                    alt="Documento cargado"
+                    class="file-thumbnail"
+                  />
+                </span>
+                <span v-else class="btn-view">📄</span>
+              </a>
+            </div>
           </div>
           <div class="button">
             <button class="btn btn-primary" type="submit" @click="submit()">
@@ -550,16 +565,31 @@
               placeholder="Enter your address"
             />
           </div>
-          <div class="row">
-            <label for="fileInput"
-              >Upload your document ID (PDF or Image):</label
-            >
+          <div class="file-row">
+            <label for="fileInput" class="file-label">
+              Upload an ID document (PDF or image):
+            </label>
+
             <input
               type="file"
+              class="file-input"
               id="fileInput"
               accept=".pdf, image/*"
               @change="handleFileChange"
             />
+
+            <div v-if="formConcentimiento.fileUrl" class="file-preview">
+              <a :href="formConcentimiento.fileUrl" target="_blank">
+                <span v-if="isImage(formConcentimiento.fileUrl)">
+                  <img
+                    :src="formConcentimiento.fileUrl"
+                    alt="Documento cargado"
+                    class="file-thumbnail"
+                  />
+                </span>
+                <span v-else class="btn-view">📄</span>
+              </a>
+            </div>
           </div>
           <div class="button">
             <button class="btn btn-primary" type="submit" @click="submit()">
@@ -578,14 +608,24 @@ import { defineComponent, ref, onMounted } from "vue";
 import countries from "@/utils/countryInfo.json"; // Importa datos de países desde un archivo JSON
 import VueCountryRegionSelect from "vue-country-region-select"; // Componente para selección de país/región
 import TextSizeSelector from "@/components/textSizeSelector.vue"; // Componente para selector de tamaño de texto
-import { databaseRef, push, database } from "@/firebase"; // Importa funciones de Firebase Realtime Database
-import { storage, storageRef, uploadBytes, getDownloadURL } from "@/firebase"; // Importa funciones de Firebase Storage
 import { toast } from "vue3-toastify"; // Módulo para notificaciones
 import PhoneInput from "vue-phone-number-input";
 import { VueTelInput } from "vue-tel-input";
 import "vue-tel-input/vue-tel-input.css";
+import {
+  storage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "@/firebase";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 
-import { getDatabase, ref as dbRef, get, set, update } from "firebase/database";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 // Define y exporta el componente Vue
@@ -650,7 +690,7 @@ export default defineComponent({
         currentDate: "",
         currentTime: "",
         schoolName: "",
-        file: null,
+        file: "",
       },
       countryCode: "+57", // Código de país predeterminado
       phoneNumber: "",
@@ -666,7 +706,7 @@ export default defineComponent({
       this.currentTime = this.getCurrentTime();
       this.formConcentimiento.currentDate = this.currentDate;
       this.formConcentimiento.currentTime = this.currentTime;
-      // Cargar lista de países desde el archivo countryInfo.json
+
       this.countries = countries.map((country) => ({
         countryCode: country.countryCode,
         countryName: country.country,
@@ -679,17 +719,22 @@ export default defineComponent({
 
       if (currentUser) {
         const uid = currentUser.uid;
-        const database = getDatabase();
-        const consentRef = dbRef(database, `concentimiento/${uid}`);
+        const db = getFirestore();
+        const consentRef = doc(db, "Consentimiento", uid);
+        const docSnap = await getDoc(consentRef);
 
-        const snapshot = await get(consentRef);
-        if (snapshot.exists()) {
-          console.log("Datos encontrados en Firebase:", snapshot.val());
+        if (docSnap.exists()) {
+          console.log("Datos encontrados en Firestore:", docSnap.data());
           this.formConcentimiento = {
             ...this.formConcentimiento,
-            ...snapshot.val(),
+            ...docSnap.data(),
           };
-          this.consentExists = true; // Indica que el consentimiento ya existe
+
+          if (docSnap.data().fileUrl) {
+            this.formConcentimiento.fileUrl = docSnap.data().fileUrl;
+          }
+
+          this.consentExists = true;
         }
       }
     } catch (error) {
@@ -742,8 +787,14 @@ export default defineComponent({
       }
     },
     handleFileChange(event) {
-      // Manejar cambio de archivo y asignarlo al formulario
-      this.formConcentimiento.file = event.target.files[0];
+      const file = event.target.files[0];
+      if (file) {
+        this.formConcentimiento.file = file; // Guarda el nuevo archivo
+        console.log("Archivo seleccionado:", file.name);
+      }
+    },
+    isImage(fileUrl) {
+      return /\.(jpeg|jpg|png|gif)$/i.test(fileUrl);
     },
     validateForm() {
       this.errorMessages = []; // Reinicia los mensajes de error
@@ -762,6 +813,7 @@ export default defineComponent({
         accept4,
         accept5,
         schoolName,
+        file,
       } = this.formConcentimiento;
 
       // Validación de campos requeridos y otros criterios
@@ -803,13 +855,17 @@ export default defineComponent({
         this.errorMessages.push("El nombre de la escuela es requerido.");
       }
 
+      if (!this.formConcentimiento.file && !this.formConcentimiento.fileUrl) {
+        this.errorMessages.push("El archivo es requerido.");
+      }
+
       // Añadir validaciones adicionales según sea necesario
 
       this.formValid = this.errorMessages.length === 0; // Actualiza el estado de validez del formulario
     },
 
     async submit() {
-      if (this.isSubmitting) return; // Evita múltiples clics
+      if (this.isSubmitting) return;
       this.isSubmitting = true;
 
       this.validateForm();
@@ -829,26 +885,55 @@ export default defineComponent({
         return;
       }
 
-      const uid = currentUser.uid; // Obtiene el UID del usuario autenticado
-      const database = getDatabase(); // Obtiene la instancia de la base de datos
-      const consentRef = dbRef(database, `concentimiento/${uid}`);
+      const file = this.formConcentimiento.file;
+      let fileUrl = this.formConcentimiento.fileUrl || ""; // Mantener el archivo actual si no se sube uno nuevo
+
+      // Subir archivo solo si hay un nuevo archivo seleccionado
+      if (file) {
+        const sanitizedFileName = file.name.replace(/\s+/g, "_");
+        const storageReference = storageRef(
+          storage,
+          `filesConsentimiento/${sanitizedFileName}`
+        );
+
+        try {
+          const snapshot = await uploadBytes(storageReference, file);
+          fileUrl = await getDownloadURL(snapshot.ref);
+        } catch (error) {
+          console.error("Error al subir el archivo:", error);
+          toast.error("Error al subir el archivo.");
+          this.isSubmitting = false;
+          return;
+        }
+      }
+
+      const uid = currentUser.uid;
+      const db = getFirestore();
+      const consentRef = doc(db, "Consentimiento", uid);
 
       const dataToSend = {
         userId: uid,
-        ...this.formConcentimiento, // Enviar todos los datos del formulario
-        timestamp: new Date().toISOString(), // Agregar timestamp de envío
+        ...this.formConcentimiento,
+        timestamp: new Date().toISOString(),
       };
 
+      // Solo agregar fileUrl si hay un archivo nuevo o si ya existe un archivo anterior
+      if (fileUrl) {
+        dataToSend.fileUrl = fileUrl;
+      }
+
+      delete dataToSend.file; // No guardar el archivo directamente
+
       try {
-        const snapshot = await get(consentRef);
-        const mensaje = snapshot.exists()
+        const docSnap = await getDoc(consentRef);
+        const mensaje = docSnap.exists()
           ? "Consentimiento actualizado correctamente"
           : "Consentimiento enviado correctamente";
 
-        if (snapshot.exists()) {
-          await update(consentRef, dataToSend);
+        if (docSnap.exists()) {
+          await updateDoc(consentRef, dataToSend);
         } else {
-          await set(consentRef, dataToSend);
+          await setDoc(consentRef, dataToSend);
         }
 
         this.consentExists = true;
@@ -861,9 +946,9 @@ export default defineComponent({
         }, 1500);
       } catch (error) {
         console.error("Error al enviar los datos:", error);
-        toast.error("Error al enviar los datos");
+        toast.error("Error al enviar los datos.");
       } finally {
-        this.isSubmitting = false; // Restablece la bandera
+        this.isSubmitting = false;
       }
     },
   },
@@ -971,6 +1056,65 @@ input[type="file"] {
   /* Centrar texto del botón */
   margin-top: 1rem;
   /* Margen superior */
+}
+
+.file-row {
+  display: flex;
+  align-items: center; /* Alinea verticalmente todos los elementos */
+  gap: 15px; /* Espacio entre elementos */
+}
+
+.file-label {
+  white-space: nowrap; /* Evita que el texto del label se divida en varias líneas */
+}
+
+.file-input {
+  flex-grow: 1; /* Permite que el input se ajuste al espacio disponible */
+}
+
+.file-preview {
+  display: flex;
+  align-items: center;
+}
+
+.file-thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.prueba {
+  /* Ancho completo para input tipo texto, select y multiselect */
+  padding: 0.5rem;
+  /* Relleno de 0.5 rem para estos elementos */
+  border: 1px solid #ccc;
+  /* Borde de 1 píxel sólido en color gris */
+  border-radius: 4px;
+  /* Borde redondeado con un radio de 4 píxeles */
+  box-sizing: border-box;
+  /* Caja de tamaño de borde */
+}
+
+.file-button {
+  text-decoration: none;
+}
+
+.btn-view {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-view:hover {
+  background-color: #0056b3;
 }
 
 /* Media queries para pantallas más grandes */

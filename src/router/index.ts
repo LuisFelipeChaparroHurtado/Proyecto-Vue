@@ -4,6 +4,9 @@ import Consentimiento from '@/views/consentimiento.vue'
 import Register from '@/views/register.vue'
 import Login from '@/views/login.vue'
 import Principal from '@/views/principal.vue'
+import EditProfile from '@/views/editProfile.vue'
+import SubirArchivos from '@/views/subirArchivos.vue'
+import AdminPage from '@/views/adminPage.vue'
 
 
 const router = createRouter({
@@ -13,6 +16,12 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Login,
+      props: true
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: AdminPage,
       props: true
     },
     {
@@ -37,6 +46,18 @@ const router = createRouter({
       path: '/principal',
       name: 'principal',
       component: Principal,
+      props: true
+    },
+    {
+      path: '/editarPerfil',
+      name: 'editarPerfil',
+      component: EditProfile,
+      props: true
+    },
+    {
+      path: '/subirArchivos',
+      name: 'subirArchivos',
+      component: SubirArchivos,
       props: true
     }
   ]

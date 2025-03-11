@@ -631,7 +631,6 @@
               </select>
             </div>
 
-
             <div class="file-row">
               <label for="fileInput" class="file-label">
                 Subir un documento de identidad (PDF o imagen):
@@ -642,7 +641,7 @@
                 class="file-input"
                 id="fileInput"
                 accept=".pdf, image/*"
-                @change="handleFileChange"
+                @change="handleFileUpload"
               />
 
               <div v-if="formConfidencialidad.fileUrl" class="file-preview">
@@ -806,16 +805,31 @@
                 </option>
               </select>
             </div>
-            <div class="row">
-              <label for="fileInput"
-                >Upload an ID document (PDF o image):</label
-              >
+            <div class="file-row">
+              <label for="fileInput" class="file-label">
+                Upload an ID document (PDF or image):
+              </label>
+
               <input
                 type="file"
+                class="file-input"
                 id="fileInput"
                 accept=".pdf, image/*"
                 @change="handleFileChange"
               />
+
+              <div v-if="formConfidencialidad.fileUrl" class="file-preview">
+                <a :href="formConfidencialidad.fileUrl" target="_blank">
+                  <span v-if="isImage(formConfidencialidad.fileUrl)">
+                    <img
+                      :src="formConfidencialidad.fileUrl"
+                      alt="Documento cargado"
+                      class="file-thumbnail"
+                    />
+                  </span>
+                  <span v-else class="btn-view">📄</span>
+                </a>
+              </div>
             </div>
             <div class="row">
               <div class="confirm">
@@ -852,22 +866,35 @@
     </div>
   </div>
 </template>
+
 <script>
 // Importación de componentes y librerías necesarias
-import Multiselect from "vue-multiselect"; // Componente de selección múltiple
-import "vue-multiselect/dist/vue-multiselect.esm.css"; // Estilos del componente Multiselect
-import { defineComponent, ref, onMounted } from "vue"; // Función para definir componentes en Vue
-import countries from "@/utils/countryInfo.json"; // Datos de países desde un archivo JSON
-import disabilities from "@/utils/disabilities.json"; // Datos de discapacidades desde un archivo JSON
-import VueCountryRegionSelect from "vue-country-region-select"; // Componente para selección de país y región
-import TextSizeSelector from "@/components/textSizeSelector.vue"; // Componente para selector de tamaño de texto
-import { storage, storageRef, uploadBytes, getDownloadURL } from "@/firebase"; // Importaciones para manejo de almacenamiento en Firebase
-import { toast } from "vue3-toastify"; // Librería para mostrar notificaciones tipo toast
-import "vue3-toastify/dist/index.css"; // Estilos para las notificaciones tipo toast
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.esm.css";
+import { defineComponent, ref, onMounted } from "vue";
+import countries from "@/utils/countryInfo.json";
+import disabilities from "@/utils/disabilities.json";
+import VueCountryRegionSelect from "vue-country-region-select";
+import TextSizeSelector from "@/components/textSizeSelector.vue";
+import {
+  storage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "@/firebase";
+
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
+import { toast } from "vue3-toastify";
+import "vue3-toastify/dist/index.css";
 import { VueTelInput } from "vue-tel-input";
 
-// Importación correcta de Firebase Database y Auth
-import { getDatabase, ref as dbRef, get, set, update } from "firebase/database";
+// Importación de Firebase Auth y Firestore (antes Realtime Database)
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 export default defineComponent({
@@ -876,7 +903,7 @@ export default defineComponent({
     VueCountryRegionSelect,
     TextSizeSelector,
     VueTelInput,
-  }, // Componentes utilizados en el template
+  },
   props: {
     textSizeClass: {
       type: String,
@@ -891,16 +918,35 @@ export default defineComponent({
     const phone = ref(null);
     const formConfidencialidad = ref({
       email: "",
-      disability: [], // <- Asegúrate de que esta propiedad existe si `isOtroSelected` la usa
+      disability: [],
     });
 
     const isValidEmail = ref(true);
     const auth = getAuth();
 
-    onMounted(() => {
-      onAuthStateChanged(auth, (loggedUser) => {
+    onMounted(async () => {
+      onAuthStateChanged(auth, async (loggedUser) => {
         if (loggedUser) {
           formConfidencialidad.value.email = loggedUser.email || "";
+
+          const uid = loggedUser.uid;
+          const db = getFirestore();
+          const docRef = doc(db, "Confidencialidad", uid);
+
+          try {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              formConfidencialidad.value = { ...docSnap.data() };
+              console.log(
+                "Datos cargados desde Firestore:",
+                formConfidencialidad.value
+              );
+            } else {
+              console.log("No hay datos previos en Firestore.");
+            }
+          } catch (error) {
+            console.error("Error al obtener los datos de Firestore:", error);
+          }
         }
       });
     });
@@ -909,13 +955,9 @@ export default defineComponent({
   },
   data() {
     return {
-      // Estado inicial del formulario y otros datos
       formConfidencialidad: {
         email: "",
-        confirmacion: {
-          si: false,
-          no: false,
-        },
+        confirmacion: { si: false, no: false },
         disability: [],
         name: "",
         document: "",
@@ -924,28 +966,27 @@ export default defineComponent({
         address: "",
         file: "",
       },
-      countryCode: "+57", // Código predeterminado de país
-      phoneNumber: "", // Número de teléfono
-      showTextField: false, // Estado para mostrar campo de texto adicional
-      textFieldValue: "", // Valor del campo de texto adicional
-      identificationNumber: "", // Número de identificación
-      isValidId: true, // Estado de validación del número de identificación
-      isValidEmail: true, // Estado de validación del correo electrónico
-      countries: {}, // Datos de países
-      formValid: false, // Estado de validez del formulario
-      errorMessages: [], // Mensajes de error del formulario
+      countryCode: "+57",
+      phoneNumber: "",
+      showTextField: false,
+      textFieldValue: "",
+      identificationNumber: "",
+      isValidId: true,
+      isValidEmail: true,
+      countries: {},
+      formValid: false,
+      errorMessages: [],
       toast: {
-        // Configuración para la notificación tipo toast
         show: false,
         message: "",
         type: "",
       },
-      discapacidades: [], // Datos de discapacidades
+      discapacidades: [],
+      isSubmitting: false,
     };
   },
   async mounted() {
     try {
-      // Carga inicial de países y discapacidades
       this.discapacidades = disabilities.map((discapacidad) => ({
         name_es: discapacidad.name_es,
         name_en: discapacidad.name_en,
@@ -955,120 +996,27 @@ export default defineComponent({
         countryCode: country.countryCode,
         countryName: country.country,
       }));
-
-      // Obtener datos del usuario autenticado
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-
-      if (currentUser) {
-        const uid = currentUser.uid;
-        const database = getDatabase();
-        const consentRef = dbRef(database, `Confidencialidad/${uid}`);
-
-        const snapshot = await get(consentRef);
-        if (snapshot.exists()) {
-          console.log("Datos encontrados en Firebase:", snapshot.val());
-          this.formConfidencialidad = {
-            ...this.formConfidencialidad,
-            ...snapshot.val(),
-          };
-          this.consentExists = true; // Indica que el consentimiento ya existe
-        }
-      }
     } catch (error) {
       console.error("Error al obtener los datos:", error);
     }
   },
-  computed: {
-    isOtroSelected() {
-      return (
-        Array.isArray(this.formConfidencialidad.disability) &&
-        this.formConfidencialidad.disability.some(
-          (option) => option.name_es === "Otro" || option.name_en === "Other"
-        )
-      );
-    },
-  },
-
-  watch: {
-    // Observador para cambios en la lista de discapacidades
-    "formConfidencialidad.disability": function () {
-      this.checkOptions();
-    },
-
-    // Observador para cambios en el formulario completo
-    formConfidencialidad: {
-      handler(newVal, oldVal) {
-        if (JSON.stringify(newVal) !== JSON.stringify(oldVal)) {
-          this.validateForm();
-        }
-      },
-      deep: true,
-      immediate: true, // Opcional: ejecuta validateForm() al montar el componente
-    },
-  },
-
   methods: {
-    toggleLanguage() {
-      const languageSelect = document.getElementById("languageSelect").value;
-      const englishText = document.getElementById("englishText");
-      const spanishText = document.getElementById("spanishText");
-
-      if (languageSelect === "en") {
-        englishText.classList.remove("hidden");
-        spanishText.classList.add("hidden");
-      } else {
-        englishText.classList.add("hidden");
-        spanishText.classList.remove("hidden");
-      }
-    },
-    // Método para validar el formato del correo electrónico
     validateEmail() {
       const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       this.isValidEmail = regex.test(this.formConfidencialidad.email);
     },
-    // Método para verificar opciones seleccionadas, especialmente 'Otro'
-    checkOptions() {
-      this.showTextField =
-        Array.isArray(this.formConfidencialidad.disability) &&
-        this.formConfidencialidad.disability.includes("Otro");
-    },
-    // Método para actualizar el número de teléfono según el código de país
-    updatePhoneNumber() {
-      this.$emit("input", `${this.countryCode} ${this.phoneNumber}`);
-    },
-    // Método para validar el formato del número de identificación
-    validateIdentification() {
-      const regex = /^[A-Za-z0-9]{6,20}$/; // Documento alfanumérico de 6 a 20 caracteres
-      this.isValidId = regex.test(this.formConfidencialidad.document);
-    },
-    // Método para manejar la carga de archivos
     handleFileUpload(event) {
       const file = event.target.files[0];
       if (file) {
-        const fileType = file.type;
-        if (fileType === "application/pdf" || fileType.startsWith("image/")) {
-          console.log("Archivo válido:", file.name); // Depuración: muestra el nombre del archivo válido
-        } else {
-          console.log(
-            "Formato de archivo no válido. Selecciona un PDF o una imagen."
-          );
-        }
-      }
-    },
-
-    handleFileChange(event) {
-      const file = event.target.files[0];
-      if (file) {
-        this.formConfidencialidad.file = file; // Guarda el nuevo archivo
+        console.log("Archivo seleccionado:", file);
+        this.formConfidencialidad.file = file;
       }
     },
     isImage(fileUrl) {
       return /\.(jpeg|jpg|png|gif)$/i.test(fileUrl);
     },
-    // Método para validar todo el formulario
     validateForm() {
-      this.errorMessages = []; // Reinicia los mensajes de error
+      this.errorMessages = [];
       const {
         email,
         name,
@@ -1081,42 +1029,28 @@ export default defineComponent({
         disability,
       } = this.formConfidencialidad;
 
-      // Validación de campos requeridos y otros criterios
-      if (!name) {
-        this.errorMessages.push("El nombre es requerido.");
-      }
-      if (!document) {
-        this.errorMessages.push("El documento es requerido.");
-      }
-      if (!country) {
-        this.errorMessages.push("El país es requerido.");
-      }
-      if (!phoneNumber) {
+      if (!name) this.errorMessages.push("El nombre es requerido.");
+      if (!document) this.errorMessages.push("El documento es requerido.");
+      if (!country) this.errorMessages.push("El país es requerido.");
+      if (!phoneNumber)
         this.errorMessages.push("El número de teléfono es requerido.");
-      }
-      if (!address) {
-        this.errorMessages.push("La dirección es requerida.");
-      }
-      if (!file) {
+      if (!address) this.errorMessages.push("La dirección es requerida.");
+      if (!file && !this.formConfidencialidad.fileUrl) {
         this.errorMessages.push("El archivo es requerido.");
       }
-      if (!confirmacion) {
+      if (!confirmacion)
         this.errorMessages.push("La confirmación es requerida.");
-      }
-      if (disability.length === 0) {
+      if (disability.length === 0)
         this.errorMessages.push("La discapacidad es requerida.");
-      }
-      if (!email) {
+      if (!email)
         this.errorMessages.push("El correo electrónico es requerido.");
-      }
-      if (!this.isValidId) {
+      if (!this.isValidId)
         this.errorMessages.push("El número de identificación no es válido.");
-      }
 
-      this.formValid = this.errorMessages.length === 0; // Actualiza el estado de validez del formulario
+      this.formValid = this.errorMessages.length === 0;
     },
     async submit() {
-      if (this.isSubmitting) return; // Evita múltiples clics
+      if (this.isSubmitting) return;
       this.isSubmitting = true;
 
       this.validateForm();
@@ -1137,11 +1071,11 @@ export default defineComponent({
       }
 
       const file = this.formConfidencialidad.file;
-      let fileUrl = "";
+      let fileUrl = this.formConfidencialidad.fileUrl || ""; // Mantener archivo si ya existe
 
-      // Subir archivo al almacenamiento de Firebase si existe
+      // Si hay un nuevo archivo, lo subimos
       if (file) {
-        const sanitizedFileName = file.name.replace(/\s+/g, "_"); // Reemplaza espacios con "_"
+        const sanitizedFileName = file.name.replace(/\s+/g, "_");
         const storageReference = storageRef(
           storage,
           `filesConfidencialidad/${sanitizedFileName}`
@@ -1149,44 +1083,42 @@ export default defineComponent({
 
         try {
           const snapshot = await uploadBytes(storageReference, file);
-          fileUrl = await getDownloadURL(snapshot.ref); // Obtiene la URL del archivo
-          //toast.success("Archivo subido correctamente.");
+          fileUrl = await getDownloadURL(snapshot.ref);
         } catch (error) {
           console.error("Error al subir el archivo:", error);
           toast.error("Error al subir el archivo.");
           this.isSubmitting = false;
-          return; // Termina la función si hay un error
+          return;
         }
       }
 
       const uid = currentUser.uid;
-      const database = getDatabase();
-      const consentRef = dbRef(database, `Confidencialidad/${uid}`);
+      const db = getFirestore();
+      const consentRef = doc(db, "Confidencialidad", uid);
 
       const dataToSend = {
         userId: uid,
-        name: this.formConfidencialidad.name,
-        confirmacion: this.formConfidencialidad.confirmacion,
-        disability: this.formConfidencialidad.disability,
-        email: this.formConfidencialidad.email,
-        document: this.formConfidencialidad.document,
-        country: this.formConfidencialidad.country,
-        phoneNumber: this.formConfidencialidad.phoneNumber,
-        address: this.formConfidencialidad.address,
+        ...this.formConfidencialidad,
         timestamp: new Date().toISOString(),
-        fileUrl: fileUrl, // Guardamos la URL del archivo subido
       };
 
-      try {
-        const snapshot = await get(consentRef);
-        const mensaje = snapshot.exists()
-          ? "Confidencialidad actualizado correctamente"
-          : "Confidencialidad enviado correctamente";
+      // Solo incluir fileUrl si hay archivo o ya existía uno
+      if (fileUrl) {
+        dataToSend.fileUrl = fileUrl;
+      }
 
-        if (snapshot.exists()) {
-          await update(consentRef, dataToSend);
+      delete dataToSend.file; // Eliminar el archivo antes de guardar en Firestore
+
+      try {
+        const docSnap = await getDoc(consentRef);
+        const mensaje = docSnap.exists()
+          ? "Confidencialidad actualizada correctamente"
+          : "Confidencialidad enviada correctamente";
+
+        if (docSnap.exists()) {
+          await updateDoc(consentRef, dataToSend);
         } else {
-          await set(consentRef, dataToSend);
+          await setDoc(consentRef, dataToSend);
         }
 
         this.consentExists = true;
@@ -1199,15 +1131,10 @@ export default defineComponent({
         }, 1500);
       } catch (error) {
         console.error("Error al enviar los datos:", error);
-        toast.error("Error al enviar los datos");
+        toast.error("Error al enviar los datos.");
       } finally {
-        this.isSubmitting = false; // Restablece la bandera
+        this.isSubmitting = false;
       }
-    },
-    data() {
-      return {
-        isSubmitting: false, // Evita doble ejecución de `submit()`
-      };
     },
   },
 });
