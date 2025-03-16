@@ -3,93 +3,119 @@
     <div class="container mx-auto p-5">
       <h2 class="text-2xl font-bold mb-4">Gestión de Avances del Proyecto</h2>
 
-      <!-- Pestañas -->
-      <div class="flex border-b">
-        <button
-          v-for="(tab, index) in tabs"
-          :key="index"
-          @click="activeTab = index"
-          :class="[
-            'px-4 py-2',
-            activeTab === index ? 'border-b-2 border-blue-500 font-bold' : '',
-          ]"
-        >
-          {{ tab.name }}
-        </button>
+      <!-- Input para nombre del proyecto -->
+      <div v-if="!isProjectConfirmed" class="mb-4">
+        <label class="block font-semibold mb-2">Nombre del Proyecto:</label>
+        <input
+          type="text"
+          v-model="projectName"
+          class="border p-2 w-full"
+          placeholder="Ingrese el nombre del proyecto"
+          :disabled="isProjectConfirmed"
+        />
       </div>
 
-      <!-- Contenido de cada pestaña -->
-      <div class="p-4">
-        <div v-if="activeTab === 0">
-          <h3 class="text-xl font-semibold">Términos y Condiciones</h3>
-          <p>Por favor, acepta los términos antes de continuar.</p>
-          <label class="flex items-center mt-2">
-            <input
-              type="checkbox"
-              v-model="termsAccepted"
-              class="mr-2"
-              @change="saveTermsAcceptance"
-            />
-            Confirmo que he cumplido con los requisitos y que han sido aprobados
-            previamente.
-          </label>
-        </div>
+      <!-- Checkbox de confirmación -->
+      <div v-if="!isProjectConfirmed" class="mb-4">
+        <label class="flex items-center">
+          <input
+            type="checkbox"
+            v-model="termsAccepted"
+            class="mr-2"
+            :disabled="isProjectConfirmed"
+          />
+          Confirmo que el proyecto está definido y aprobado.
+        </label>
+      </div>
 
-        <div v-if="activeTab === 1">
-          <h3 class="text-xl font-semibold">Subir Avances</h3>
+      <!-- Botón de confirmación -->
+      <button
+        v-if="!isProjectConfirmed"
+        @click="confirmProject"
+        class="bg-blue-500 text-white px-4 py-2 mt-2 rounded"
+        :disabled="!projectName || !termsAccepted"
+      >
+        Confirmar Proyecto
+      </button>
 
-          <div v-if="!user" class="text-red-500 font-bold">
-            Debes iniciar sesión para subir archivos.
-          </div>
-
-          <div
-            v-for="(doc, index) in documentTypes"
+      <!-- Mostrar pestañas solo si el proyecto está confirmado -->
+      <div v-if="isProjectConfirmed">
+        <div class="flex border-b mt-5">
+          <button
+            v-for="(tab, index) in tabs"
             :key="index"
-            class="mb-4"
-            v-if="user"
+            @click="activeTab = index"
+            :class="[
+              'px-4 py-2',
+              activeTab === index ? 'border-b-2 border-blue-500 font-bold' : '',
+            ]"
           >
-            <h4 class="font-semibold">{{ doc.name }}</h4>
-            <input
-              type="file"
-              @change="(e) => handleFileUpload(e, doc.id)"
-              accept=".pdf,.doc,.docx"
-            />
-
-            <button
-              @click="uploadFile(doc.id, doc.name)"
-              class="upload-button"
-              :class="{
-                enabled: selectedFiles[doc.id],
-                disabled: !selectedFiles[doc.id],
-              }"
-              :disabled="!selectedFiles[doc.id] || isUploading"
-            >
-              Subir Archivo
-            </button>
-          </div>
+            {{ tab.name }}
+          </button>
         </div>
 
-        <div v-if="activeTab === 2">
-          <h3 class="text-xl font-semibold">Avances Subidos</h3>
-          <ul class="uploaded-list">
-            <li
-              v-for="(file, index) in uploadedFiles"
-              :key="index"
-              class="uploaded-item"
-            >
-              <div class="file-info">
-                <span class="font-semibold">{{ file.name }}</span
-                ><br />
-                <small class="text-gray-500">{{
-                  formatDate(file.timestamp)
-                }}</small>
-              </div>
+        <!-- Contenido de cada pestaña -->
+        <div class="p-4">
+          <div v-if="activeTab === 0">
+            <h3 class="text-xl font-semibold">{{ projectName }}</h3>
+            <p>El proyecto ha sido confirmado y no puede modificarse.</p>
+          </div>
 
-              <a :href="file.url" target="_blank" class="view-button">
-                🔍 Ver
-              </a>
-            </li>
-          </ul>
+          <div v-if="activeTab === 1">
+            <h3 class="text-xl font-semibold">Subir Avances</h3>
+
+            <div v-if="!user" class="text-red-500 font-bold">
+              Debes iniciar sesión para subir archivos.
+            </div>
+
+            <div
+              v-for="(doc, index) in documentTypes"
+              :key="index"
+              class="mb-4"
+              v-if="user"
+            >
+              <h4 class="font-semibold">{{ doc.name }}</h4>
+              <input
+                type="file"
+                @change="(e) => handleFileUpload(e, doc.id)"
+                accept=".pdf,.doc,.docx"
+              />
+
+              <button
+                @click="uploadFile(doc.id, doc.name)"
+                class="upload-button"
+                :class="{
+                  enabled: selectedFiles[doc.id],
+                  disabled: !selectedFiles[doc.id],
+                }"
+                :disabled="!selectedFiles[doc.id] || isUploading"
+              >
+                Subir Archivo
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeTab === 2">
+            <h3 class="text-xl font-semibold">Avances Subidos</h3>
+            <ul class="uploaded-list">
+              <li
+                v-for="(file, index) in uploadedFiles"
+                :key="index"
+                class="uploaded-item"
+              >
+                <div class="file-info">
+                  <span class="font-semibold">{{ file.name }}</span
+                  ><br />
+                  <small class="text-gray-500">{{
+                    formatDate(file.timestamp)
+                  }}</small>
+                </div>
+                <a :href="file.url" target="_blank" class="view-button">
+                  🔍 Ver
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
@@ -127,9 +153,11 @@ export default {
   data() {
     return {
       activeTab: 0,
-      termsAccepted: localStorage.getItem("termsAccepted") === "true",
+      projectName: "",
+      termsAccepted: false,
+      isProjectConfirmed: false,
       user: null,
-      isUploading: false, // Estado para mostrar el spinner
+      isUploading: false,
       tabs: [
         { name: "Inicio" },
         { name: "Subir Avances" },
@@ -148,16 +176,64 @@ export default {
   },
   created() {
     const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         this.user = user;
-        this.fetchUploadedFiles();
+        await this.fetchProjectData(); // Obtiene el proyecto al cargar la página
+        await this.fetchUploadedFiles();
       }
     });
   },
   methods: {
-    saveTermsAcceptance() {
-      localStorage.setItem("termsAccepted", this.termsAccepted);
+    async confirmProject() {
+      if (!this.user || !this.projectName || !this.termsAccepted) {
+        toast.error(
+          "Debes aceptar los términos y escribir un nombre de proyecto.",
+          {
+            autoClose: 2000,
+          }
+        );
+        return;
+      }
+
+      const db = getFirestore();
+      const projectRef = doc(db, "projects", this.user.uid);
+
+      try {
+        await setDoc(projectRef, {
+          projectName: this.projectName,
+          isConfirmed: true,
+        });
+
+        this.isProjectConfirmed = true;
+
+        // Actualizar en la interfaz el nombre del proyecto guardado
+        await this.fetchProjectData();
+
+        toast.success("Proyecto confirmado exitosamente.", {
+          autoClose: 1000,
+        });
+      } catch (error) {
+        console.error("Error al confirmar proyecto:", error);
+      }
+    },
+
+    async fetchProjectData() {
+      if (!this.user) return;
+
+      const db = getFirestore();
+      const projectRef = doc(db, "projects", this.user.uid);
+
+      try {
+        const projectSnap = await getDoc(projectRef);
+        if (projectSnap.exists()) {
+          const data = projectSnap.data();
+          this.projectName = data.projectName || "";
+          this.isProjectConfirmed = data.isConfirmed || false;
+        }
+      } catch (error) {
+        console.error("Error al obtener datos del proyecto:", error);
+      }
     },
 
     handleFileUpload(event, docId) {
@@ -165,9 +241,18 @@ export default {
     },
 
     async uploadFile(docId, docName) {
-      if (!this.selectedFiles[docId] || !this.user) return;
+      if (
+        !this.selectedFiles[docId] ||
+        !this.user ||
+        !this.isProjectConfirmed
+      ) {
+        toast.error("Debes confirmar un proyecto antes de subir archivos.", {
+          autoClose: 2000,
+        });
+        return;
+      }
 
-      this.isUploading = true; // Mostrar pantalla de carga
+      this.isUploading = true;
 
       const storage = getStorage();
       const file = this.selectedFiles[docId];
@@ -188,9 +273,10 @@ export default {
         const fileData = {
           id: fileName,
           name: docName,
+          projectName: this.projectName, // Asociar con el proyecto
           url: fileURL,
           timestamp: new Date().toISOString(),
-          userId: this.user.uid, // Se almacena el ID del usuario
+          userId: this.user.uid,
         };
 
         if (docSnap.exists()) {
@@ -206,26 +292,55 @@ export default {
         this.selectedFiles[docId] = null;
         await this.fetchUploadedFiles();
 
-        // Mostrar toast de éxito
         toast.success(`Se subió el documento "${docName}" correctamente.`, {
           autoClose: 1000,
         });
       } catch (error) {
         console.error("Error al subir archivo:", error);
       } finally {
-        this.isUploading = false; // Ocultar pantalla de carga
+        this.isUploading = false;
       }
     },
 
     async fetchUploadedFiles() {
       if (!this.user) return;
+
       const db = getFirestore();
       const userDocRef = doc(db, "projectFiles", this.user.uid);
 
       try {
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          this.uploadedFiles = docSnap.data().avances || [];
+          const allFiles = docSnap.data().avances || [];
+
+          // Inicializamos un objeto con los tipos de documentos esperados
+          const latestFiles = {
+            manual_usuario: null,
+            manual_funciones: null,
+            avance_proyecto: null,
+            proyecto_final: null,
+            documentos_universidad: null,
+          };
+
+          allFiles.forEach((file) => {
+            // Extraer el identificador del documento del ID del archivo
+            const docId = file.id.match(/^(.*?)_\d+/)?.[1];
+
+            // Verificar que sea uno de los tipos esperados
+            if (latestFiles.hasOwnProperty(docId)) {
+              // Si no hay archivo registrado o el nuevo archivo es más reciente, actualizarlo
+              if (
+                !latestFiles[docId] ||
+                new Date(file.timestamp).getTime() >
+                  new Date(latestFiles[docId].timestamp).getTime()
+              ) {
+                latestFiles[docId] = file;
+              }
+            }
+          });
+
+          // Convertir el objeto en un array, eliminando los valores nulos
+          this.uploadedFiles = Object.values(latestFiles).filter(Boolean);
         } else {
           this.uploadedFiles = [];
         }

@@ -53,7 +53,9 @@ export default defineComponent({
     const isFormRoute = computed(() => {
       return (
         route.path.includes("/confidencialidad") ||
-        route.path.includes("/consentimiento")
+        route.path.includes("/consentimiento") ||
+        route.path.includes("/editarPerfil") ||
+        route.path.includes("/subirArchivos")
       );
     });
 

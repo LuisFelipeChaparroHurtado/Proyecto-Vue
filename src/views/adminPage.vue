@@ -14,8 +14,8 @@
         <tr>
           <th>Nombre</th>
           <th>Apellido</th>
-          <th>Correo</th>
           <th>Rol</th>
+          <th>Correo</th>
           <th>Fecha de Registro</th>
           <th>Acciones</th>
         </tr>
@@ -30,14 +30,13 @@
             <input v-model="user.tempData.lastName" />
           </td>
           <td v-else>{{ user.lastName }}</td>
-          <td v-if="user.editing"><input v-model="user.tempData.email" /></td>
-          <td v-else>{{ user.email }}</td>
           <td>
             <select v-model="user.tempData.role" :disabled="!user.editing">
               <option value="usuario">Usuario</option>
               <option value="admin">Administrador</option>
             </select>
           </td>
+          <td>{{ user.email }}</td>
 
           <td>{{ formatDate(user.createdAt) }}</td>
           <td>
