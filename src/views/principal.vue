@@ -17,17 +17,26 @@
           <div class="profile-section">
             <h2 class="title" :class="textSizeClass">Perfil de Usuario</h2>
             <div class="profile-pic-container">
-              <img :src="user.photoURL || defaultProfilePic" alt="Foto de perfil" class="profile-pic" />
+              <img
+                :src="user.photoURL || defaultProfilePic"
+                alt="Foto de perfil"
+                class="profile-pic"
+              />
             </div>
-            <p><strong>Usuario:</strong> {{ user.displayName || "Sin nombre" }}</p>
+            <p>
+              <strong>Usuario:</strong>
+              {{ user.firstName + " " + user.lastName || "Sin nombre" }}
+            </p>
             <p><strong>Email:</strong> {{ user.email }}</p>
           </div>
 
           <div class="menu">
-            <button @click="!form1Completed ? goTo('/confidencialidad') : null"
-                    :class="textSizeClass"
-                    class="form-button"
-                    :disabled="form1Completed">
+            <button
+              @click="!form1Completed ? goTo('/confidencialidad') : null"
+              :class="textSizeClass"
+              class="form-button"
+              :disabled="form1Completed"
+            >
               <span class="button-text">
                 Formulario de Confidencialidad
                 <span v-if="form1Completed" class="checkmark">✔️</span>
@@ -37,10 +46,12 @@
               </div>
             </button>
 
-            <button @click="!form2Completed ? goTo('/consentimiento') : null"
-                    :class="textSizeClass"
-                    class="form-button"
-                    :disabled="form2Completed">
+            <button
+              @click="!form2Completed ? goTo('/consentimiento') : null"
+              :class="textSizeClass"
+              class="form-button"
+              :disabled="form2Completed"
+            >
               <span class="button-text">
                 Formulario de Consentimiento
                 <span v-if="form2Completed" class="checkmark">✔️</span>
@@ -50,9 +61,43 @@
               </div>
             </button>
 
-            <button @click="goTo('/subirArchivos')" :class="textSizeClass">Avances de proyecto</button>
-            <button @click="goTo('/editarPerfil')" :class="textSizeClass">Editar Perfil</button>
-            <button @click="logout" :class="textSizeClass">Cerrar Sesión</button>
+            <!-- Botón para subir/editar hoja de vida -->
+            <button
+              class="form-button"
+              @click="!hasResume ? uploadResume() : null"
+            >
+              <span class="button-text">
+                Hoja de Vida
+                <span v-if="hasResume" class="checkmark">✔️</span>
+              </span>
+
+              <!-- Contenedor de los botones de acción (Solo si ya hay un archivo) -->
+              <div v-if="hasResume" class="action-buttons">
+                <button @click.stop="uploadResume">✏️</button>
+                <button @click.stop="viewResume">📂</button>
+              </div>
+            </button>
+            <!-- Input oculto para subir archivos -->
+            <input
+              type="file"
+              ref="resumeInput"
+              @change="handleResumeUpload"
+              accept=".pdf,.doc,.docx"
+              hidden
+            />
+
+            <button @click="goTo('/subirArchivos')" :class="textSizeClass">
+              Avances de proyecto
+            </button>
+
+            
+
+            <button @click="goTo('/editarPerfil')" :class="textSizeClass">
+              Editar Perfil
+            </button>
+            <button @click="logout" :class="textSizeClass">
+              Cerrar Sesión
+            </button>
           </div>
         </div>
         <div v-else>
@@ -64,39 +109,80 @@
 </template>
 
 <script>
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
-import { getStorage, ref as storageRef, getDownloadURL } from "firebase/storage";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut,
+  updateProfile,
+} from "firebase/auth";
+import {
+  getStorage,
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
+  props: {
+    textSizeClass: {
+      type: String,
+      default: "medium-text",
+    },
+    selectedLanguage: {
+      type: String,
+      required: true,
+    },
+  },
   setup() {
     const user = ref(null);
     const auth = getAuth();
     const router = useRouter();
-    const defaultProfilePic = "https://registration-c5bcd.web.app/profile_default.png";
+    const defaultProfilePic =
+      "https://registration-c5bcd.web.app/profile_default.png";
     const form1Completed = ref(false);
     const form2Completed = ref(false);
     const showWelcomeModal = ref(false);
     const storage = getStorage();
+    const db = getFirestore();
+    const resumeInput = ref(null);
+    const hasResume = ref(false);
+    const resumeMessage = ref("");
+    const resumeURL = ref("");
 
     onMounted(() => {
-
-      
       onAuthStateChanged(auth, async (loggedUser) => {
         if (loggedUser) {
-
           let photoURL = defaultProfilePic; // Imagen por defecto
 
           try {
-            const profilePicRef = storageRef(storage, `profilePictures/${loggedUser.uid}`);
+            const profilePicRef = storageRef(
+              storage,
+              `profilePictures/${loggedUser.uid}`
+            );
             photoURL = await getDownloadURL(profilePicRef);
           } catch (error) {
-            console.warn("No se encontró la imagen en Storage, usando la predeterminada.");
+            console.warn(
+              "No se encontró la imagen en Storage, usando la predeterminada."
+            );
+          }
+
+          const userRef = doc(db, "users", loggedUser.uid);
+          const userSnap = await getDoc(userRef);
+          let firstName = "";
+          let lastName = "";
+
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            firstName = userData.firstName || "";
+            lastName = userData.lastName || "";
           }
 
           user.value = {
+            firstName,
+            lastName,
             displayName: loggedUser.displayName,
             email: loggedUser.email,
             photoURL: photoURL,
@@ -109,21 +195,27 @@ export default {
           }
 
           // Consultar Firestore para verificar formularios completados
-          const db = getFirestore();
-          const confidencialidadRef = doc(db, "Confidencialidad", loggedUser.uid);
+          const confidencialidadRef = doc(
+            db,
+            "Confidencialidad",
+            loggedUser.uid
+          );
           const consentimientoRef = doc(db, "Consentimiento", loggedUser.uid);
 
           try {
-            const [confidencialidadSnap, consentimientoSnap] = await Promise.all([
-              getDoc(confidencialidadRef),
-              getDoc(consentimientoRef),
-            ]);
+            const [confidencialidadSnap, consentimientoSnap] =
+              await Promise.all([
+                getDoc(confidencialidadRef),
+                getDoc(consentimientoRef),
+              ]);
 
             form1Completed.value = confidencialidadSnap.exists();
             form2Completed.value = consentimientoSnap.exists();
           } catch (error) {
             console.error("Error al obtener datos de Firestore:", error);
           }
+
+          checkResume();
         } else {
           user.value = null;
         }
@@ -162,6 +254,77 @@ export default {
       showWelcomeModal.value = false;
     };
 
+    const uploadResume = () => {
+      resumeInput.value.click();
+    };
+
+    const handleResumeUpload = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const validTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!validTypes.includes(file.type)) {
+        resumeMessage.value = "Formato inválido. Sube un PDF o Word.";
+        return;
+      }
+
+      const fileRef = storageRef(storage, `resumes/${auth.currentUser.uid}`);
+      try {
+        await uploadBytes(fileRef, file);
+        const downloadURL = await getDownloadURL(fileRef);
+
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await setDoc(userRef, { resumeURL: downloadURL }, { merge: true });
+
+        hasResume.value = true;
+        resumeURL.value = downloadURL;
+        resumeMessage.value = "Hoja de vida subida exitosamente.";
+      } catch (error) {
+        console.error("Error al subir el archivo:", error);
+        resumeMessage.value = "Error al subir el archivo.";
+      }
+    };
+
+    // 📌 Verifica si ya existe una hoja de vida en Firestore
+    const checkResume = async () => {
+      try {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists() && userSnap.data().resumeURL) {
+          resumeURL.value = userSnap.data().resumeURL;
+          hasResume.value = true;
+          //console.log("✅ Hoja de vida encontrada:", resumeURL.value);
+        } else {
+          hasResume.value = false;
+          resumeURL.value = "";
+          //console.log("⚠️ No se encontró hoja de vida.");
+        }
+      } catch (error) {
+        console.error("Error al obtener la hoja de vida:", error);
+      }
+    };
+
+    // ✅ Llamar a `checkResume()` dentro de `onAuthStateChanged`
+    onMounted(() => {
+      onAuthStateChanged(auth, async (loggedUser) => {
+        if (loggedUser) {
+          checkResume();
+        }
+      });
+    });
+
+    // 📌 Abre la hoja de vida en una nueva pestaña
+    const viewResume = () => {
+      if (resumeURL.value) {
+        window.open(resumeURL.value, "_blank");
+      }
+    };
+
     return {
       user,
       goTo,
@@ -171,11 +334,16 @@ export default {
       logout,
       showWelcomeModal,
       closeModal,
+      resumeInput,
+      hasResume,
+      resumeMessage,
+      uploadResume,
+      handleResumeUpload,
+      viewResume,
     };
   },
 };
 </script>
-
 
 <style scoped>
 .form-button {
@@ -191,6 +359,11 @@ export default {
   border-radius: 5px;
   font-size: 1rem;
   cursor: pointer;
+}
+
+.action-buttons-container {
+  display: flex;
+  gap: 4px; /* Espacio entre botones */
 }
 
 .action-buttons {

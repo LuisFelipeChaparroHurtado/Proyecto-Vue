@@ -6,7 +6,11 @@
       <div class="profile-grid">
         <div class="centradoVertical">
           <div class="profile-pic-section">
-            <img :src="photoPreview || photoURL" alt="Foto de perfil" class="profile-pic" />
+            <img
+              :src="photoPreview || photoURL"
+              alt="Foto de perfil"
+              class="profile-pic"
+            />
             <input type="file" @change="handleFileUpload" accept="image/*" />
           </div>
         </div>
@@ -14,17 +18,31 @@
         <div class="profile-form">
           <div class="form-group">
             <label for="displayName">Nombre</label>
-            <input v-model="newDisplayName" type="text" id="displayName" />
+            <input
+              v-model="newDisplayName"
+              type="text"
+              id="displayName"
+              readonly
+            />
           </div>
 
           <div class="form-group">
             <label for="currentPassword">Contraseña Actual</label>
-            <input v-model="currentPassword" type="password" id="currentPassword" />
+            <input
+              v-model="currentPassword"
+              type="password"
+              id="currentPassword"
+            />
           </div>
 
           <div class="form-group">
             <label for="newPassword">Nueva Contraseña</label>
-            <input v-model="newPassword" type="password" id="newPassword" placeholder="Dejar en blanco para no cambiar" />
+            <input
+              v-model="newPassword"
+              type="password"
+              id="newPassword"
+              placeholder="Dejar en blanco para no cambiar"
+            />
           </div>
 
           <button @click="updateProfile" :disabled="isUpdating">
@@ -33,7 +51,9 @@
           <button @click="goBack">Cancelar</button>
 
           <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-          <p v-if="successMessage" class="success-message">{{ successMessage }}</p>
+          <p v-if="successMessage" class="success-message">
+            {{ successMessage }}
+          </p>
         </div>
       </div>
     </div>
@@ -48,12 +68,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from "firebase/auth";
-import {
-  getFirestore,
-  doc,
-  getDoc,
-  setDoc,
-} from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import {
   getStorage,
   ref as storageRef,
@@ -64,6 +79,16 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 export default {
+  props: {
+    textSizeClass: {
+      type: String,
+      default: "medium-text",
+    },
+    selectedLanguage: {
+      type: String,
+      required: true,
+    },
+  },
   setup() {
     const auth = getAuth();
     const db = getFirestore();
@@ -71,7 +96,9 @@ export default {
     const router = useRouter();
 
     const newDisplayName = ref("");
-    const photoURL = ref("https://registration-c5bcd.web.app/profile_default.png");
+    const photoURL = ref(
+      "https://registration-c5bcd.web.app/profile_default.png"
+    );
     const photoPreview = ref(null);
     const selectedFile = ref(null);
     const currentPassword = ref("");
@@ -79,6 +106,7 @@ export default {
     const errorMessage = ref("");
     const successMessage = ref("");
     const isUpdating = ref(false);
+    const role = ref("");
 
     const loadUserData = async () => {
       if (!auth.currentUser) return;
@@ -86,8 +114,14 @@ export default {
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data();
-        newDisplayName.value = userData.firstName || "";
-        photoURL.value = userData.photoURL || "https://registration-c5bcd.web.app/profile_default.png";
+        newDisplayName.value = `${userData.firstName || ""} ${
+          userData.lastName || ""
+        }`;
+        photoURL.value =
+          userData.photoURL ||
+          "https://registration-c5bcd.web.app/profile_default.png";
+
+        role.value = userData.role || "";
 
         console.log("photoURL al cargar datos del usuario:", photoURL.value);
       }
@@ -99,21 +133,44 @@ export default {
 
     const handleFileUpload = (event) => {
       const file = event.target.files[0];
-      if (file) {
-        selectedFile.value = file;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          photoPreview.value = e.target.result;
+      if (!file) return;
+
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.src = e.target.result;
+
+        img.onload = () => {
+          const idealWidth = 378;
+          const idealHeight = 567;
+
+          if (img.width !== idealWidth || img.height !== idealHeight) {
+            errorMessage.value = `La imagen debe ser de ${idealWidth}x${idealHeight} píxeles.`;
+
+            // Restablecer el input de archivo para que no muestre el nombre
+            event.target.value = "";
+            selectedFile.value = null;
+            photoPreview.value = null;
+          } else {
+            errorMessage.value = "";
+            selectedFile.value = file;
+            photoPreview.value = e.target.result;
+          }
         };
-        reader.readAsDataURL(file);
-      }
+      };
+
+      reader.readAsDataURL(file);
     };
 
     const reauthenticateUser = async () => {
       if (!auth.currentUser || !currentPassword.value) {
         throw new Error("Debes ingresar tu contraseña actual.");
       }
-      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword.value);
+      const credential = EmailAuthProvider.credential(
+        auth.currentUser.email,
+        currentPassword.value
+      );
       await reauthenticateWithCredential(auth.currentUser, credential);
     };
 
@@ -132,24 +189,44 @@ export default {
         const userRef = doc(db, "users", auth.currentUser.uid);
 
         if (selectedFile.value) {
-          const fileRef = storageRef(storage, `profilePictures/${auth.currentUser.uid}`);
+          const fileRef = storageRef(
+            storage,
+            `profilePictures/${auth.currentUser.uid}`
+          );
           await uploadBytes(fileRef, selectedFile.value);
           newPhotoURL = await getDownloadURL(fileRef);
         }
 
-        await updateProfile(auth.currentUser, {
-          displayName: newDisplayName.value,
-          photoURL: newPhotoURL,
-        });
+        // Crear un objeto con los campos a actualizar
+        const profileUpdates = {};
+        if (newPhotoURL !== photoURL.value) {
+          profileUpdates.photoURL = newPhotoURL;
+        }
 
-        await setDoc(userRef, {
-          firstName: newDisplayName.value,
-          photoURL: newPhotoURL,
-        }, { merge: true });
+        // Actualizar el perfil solo si hay cambios
+        if (Object.keys(profileUpdates).length > 0) {
+          await updateProfile(auth.currentUser, profileUpdates);
+        }
+
+        // Actualizar la información en Firestore
+        await setDoc(
+          userRef,
+          {
+            photoURL: newPhotoURL,
+          },
+          { merge: true }
+        );
 
         if (newPassword.value) {
           await reauthenticateUser();
           await updatePassword(auth.currentUser, newPassword.value);
+        }
+
+        // Redirigir según el rol
+        if (role.value === "admin") {
+          router.push("/dashboard");
+        } else {
+          router.push("/principal");
         }
 
         photoURL.value = newPhotoURL;
@@ -157,7 +234,6 @@ export default {
         newPassword.value = "";
         currentPassword.value = "";
         successMessage.value = "Perfil actualizado con éxito.";
-        router.push("/principal");
       } catch (error) {
         errorMessage.value = "Error al actualizar el perfil: " + error.message;
       } finally {
@@ -166,7 +242,12 @@ export default {
     };
 
     const goBack = () => {
-      router.push("/principal");
+      // Redirigir según el rol al cancelar
+      if (role.value === "admin") {
+        router.push("/dashboard");
+      } else {
+        router.push("/principal");
+      }
     };
 
     return {

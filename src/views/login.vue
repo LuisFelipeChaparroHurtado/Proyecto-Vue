@@ -30,11 +30,11 @@
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
-    <!-- Modal de error -->
+    <!-- Modal de usuario no encontrado -->
     <div v-if="showModal" class="modal">
       <div class="modal-content">
-        <h3>Usuario no encontrado</h3>
-        <p>El usuario no existe en la base de datos.</p>
+        <h3>{{ modalTitle }}</h3>
+        <p>{{ modalMessage }}</p>
         <div class="centrado-boton">
           <button @click="closeModal">Cerrar</button>
         </div>
@@ -42,8 +42,9 @@
     </div>
   </div>
 </template>
+
 <script>
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
@@ -54,6 +55,8 @@ export default {
     const password = ref("");
     const errorMessage = ref("");
     const showModal = ref(false);
+    const modalTitle = ref("");
+    const modalMessage = ref("");
     const router = useRouter();
 
     const login = async () => {
@@ -67,19 +70,30 @@ export default {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          showModal.value = true; // Si no existe, mostrar modal
+          // 🛑 Usuario no encontrado en Firestore
+          modalTitle.value = "Usuario no encontrado";
+          modalMessage.value = "El usuario no existe en la base de datos.";
+          showModal.value = true;
           return;
         }
 
-        // 🔹 2. Si el usuario existe en Firestore, continuar con Firebase Auth
+        // 🔹 2. Si el usuario existe en Firestore, obtener sus datos
+        const userData = querySnapshot.docs[0].data();
+        
+        // 🔹 3. Verificar si está bloqueado
+        if (userData.isBlocked) {
+          modalTitle.value = "Acceso denegado";
+          modalMessage.value = "Tu cuenta ha sido bloqueada por un administrador.";
+          showModal.value = true;
+          return;
+        }
+
+        // 🔹 4. Iniciar sesión en Firebase Auth
         const userCredential = await signInWithEmailAndPassword(auth, email.value, password.value);
         const user = userCredential.user;
 
-        // 🔹 3. Verificar rol del usuario en Firestore
-        const userData = querySnapshot.docs[0].data();
+        // 🔹 5. Redirigir según el rol
         const role = userData.role || "usuario";
-
-        // 🔹 4. Redirigir según el rol
         if (role === "admin") {
           router.push("/dashboard");
         } else {
@@ -90,7 +104,6 @@ export default {
       }
     };
 
-
     const closeModal = () => {
       showModal.value = false;
     };
@@ -100,12 +113,15 @@ export default {
       password,
       errorMessage,
       showModal,
+      modalTitle,
+      modalMessage,
       login,
       closeModal
     };
   },
 };
 </script>
+
 
 <style scoped>
 .login-container {
@@ -163,7 +179,6 @@ button {
   text-align: center;
   text-align: center;
   width: 700px;
-  
 }
 
 .modal-content button {

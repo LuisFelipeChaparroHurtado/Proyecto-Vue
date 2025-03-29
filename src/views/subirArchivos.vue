@@ -150,6 +150,16 @@ import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
 
 export default {
+  props: {
+    textSizeClass: {
+      type: String,
+      default: "medium-text",
+    },
+    selectedLanguage: {
+      type: String,
+      required: true,
+    },
+  },
   data() {
     return {
       activeTab: 0,
