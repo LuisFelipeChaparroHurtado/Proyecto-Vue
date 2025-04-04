@@ -416,6 +416,17 @@
             </select>
           </div>
           <div class="row">
+            <label for=""
+              >Name of the university, institute, or company you are part of and/or represent</label
+            >
+            <input
+              type="text"
+              placeholder="Enter the name of the university or company to which you belong"
+              id="school"
+              v-model="formConcentimiento.schoolName"
+            />
+          </div>
+          <div class="row">
             <label
               >By this means, I authorize the Bilingual Gymnasium School and the
               International Foundation FUNIFELT to use and disclose the existing

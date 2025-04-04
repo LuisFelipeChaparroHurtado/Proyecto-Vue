@@ -44,9 +44,16 @@ export default {
     const role = ref(""); // Nuevo campo para el rol
     const errorMessage = ref("");
 
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
     const registerUser = async () => {
       if (password.value !== confirm_password.value) {
         errorMessage.value = "Las contraseñas no coinciden";
+        return;
+      }
+      if (!passwordRegex.test(password.value)) {
+        errorMessage.value =
+          "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.";
         return;
       }
 

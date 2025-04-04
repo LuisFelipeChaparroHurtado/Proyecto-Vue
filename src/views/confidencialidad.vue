@@ -516,14 +516,8 @@
           <div class="card">
             <div class="row">
               <label>Correo</label>
-              <input
-                type="text"
-                v-model="formConfidencialidad.email"
-                id="email"
-                placeholder="example@mail.com"
-                required
-                readonly
-              />
+              <input type="text" v-model="formConfidencialidad.email" id="email" placeholder="example@mail.com" required
+                readonly />
               <span v-if="!isValidEmail" style="color: red">
                 Por favor ingrese un correo electrónico válido.
               </span>
@@ -531,101 +525,54 @@
             <div class="row">
               <label>Discapacidades</label>
               <div class="discapacidades">
-                <multiselect
-                  v-model="formConfidencialidad.disability"
-                  :options="discapacidades"
-                  :multiple="true"
-                  :close-on-select="false"
-                  :clear-on-select="false"
-                  :preserve-search="true"
-                  @update="checkOptions"
-                  placeholder="Selecciona opciones"
-                  label="name_es"
-                  value="name_es"
-                  track-by="name_es"
-                />
+                <multiselect v-model="formConfidencialidad.disability" :options="discapacidades" :multiple="true"
+                  :close-on-select="false" :clear-on-select="false" :preserve-search="true" @update="checkOptions"
+                  placeholder="Selecciona opciones" label="name_es" value="name_es" track-by="name_es" />
                 <br v-if="isOtroSelected" />
-                <input
-                  v-if="isOtroSelected"
-                  type="text"
-                  id="textfield"
-                  v-model="textFieldValue"
-                  placeholder="Cuales otras"
-                  required
-                />
+                <input v-if="isOtroSelected" type="text" id="textfield" v-model="textFieldValue"
+                  placeholder="Cuales otras" required />
               </div>
             </div>
 
             <div class="row">
               <label for="">Nombre completo</label>
-              <input
-                type="text"
-                placeholder="Ingresa tu nombre"
-                id="fullname"
-                v-model="formConfidencialidad.name"
-                required
-              />
+              <input type="text" placeholder="Ingresa tu nombre" id="fullname" v-model="formConfidencialidad.name"
+                required />
             </div>
             <div class="row">
-              <label for="identification"
-                >Documento de Identidad, DNI, ID o Pasaporte:</label
-              >
-              <input
-                type="text"
-                v-model="formConfidencialidad.document"
-                @input="validateIdentification"
-                minlength="6"
-                maxlength="20"
-                id="document"
-                placeholder="Ingresa tu documento"
-                required
-              />
-              <span v-if="!isValidId" style="color: red"
-                >Por favor ingrese un documento válido.</span
-              >
+              <label for="identification">Documento de Identidad, DNI, ID o Pasaporte:</label>
+              <input type="text" v-model="formConfidencialidad.document" @input="validateIdentification" minlength="6"
+                maxlength="20" id="document" placeholder="Ingresa tu documento" required />
+              <span v-if="!isValidId" style="color: red">Por favor ingrese un documento válido.</span>
             </div>
             <div class="row phone">
               <label for="phone">Número de Teléfono:</label>
               <div class="phone-input">
-                <vue-tel-input
-                  v-model="formConfidencialidad.phoneNumber"
-                  mode="international"
-                  @input="handleInput"
+                <vue-tel-input v-model="formConfidencialidad.phoneNumber" mode="international" @input="handleInput"
                   :inputOptions="{
                     inputClass: 'vue-tel-input__input',
                     type: 'tel',
                     pattern: '[0-9]{10}',
                     maxlength: '10',
-                  }"
-                  style="
+                  }" style="
                     width: 100%;
                     line-height: normal;
                     display: flex;
                     align-items: center;
                     height: 42px;
-                  "
-                  required
-                ></vue-tel-input>
+                  " required></vue-tel-input>
               </div>
             </div>
             <div class="row">
               <label for="address">Dirección:</label>
-              <input
-                type="text"
-                id="address"
-                v-model="formConfidencialidad.address"
-                placeholder="Ingrese su dirección"
-              />
+              <input type="text" id="address" v-model="formConfidencialidad.address"
+                placeholder="Ingrese su dirección" />
             </div>
             <div class="row">
               <label for="country">País:</label>
               <select id="country" v-model="formConfidencialidad.country">
                 <option value="" disabled selected>Selecciona un país</option>
-                <option
-                  v-for="(country, index) in countries"
-                  :key="index"
-                  :value="country.countryName"
-                >
+                <option v-for="(country, index) in countries" :key="index" :value="country.countryName">
                   {{ country.countryName }}
                 </option>
               </select>
@@ -636,22 +583,12 @@
                 Subir un documento de identidad (PDF o imagen):
               </label>
 
-              <input
-                type="file"
-                class="file-input"
-                id="fileInput"
-                accept=".pdf, image/*"
-                @change="handleFileUpload"
-              />
+              <input type="file" class="file-input" id="fileInput" accept=".pdf, image/*" @change="handleFileUpload" />
 
               <div v-if="formConfidencialidad.fileUrl" class="file-preview">
                 <a :href="formConfidencialidad.fileUrl" target="_blank">
                   <span v-if="isImage(formConfidencialidad.fileUrl)">
-                    <img
-                      :src="formConfidencialidad.fileUrl"
-                      alt="Documento cargado"
-                      class="file-thumbnail"
-                    />
+                    <img :src="formConfidencialidad.fileUrl" alt="Documento cargado" class="file-thumbnail" />
                   </span>
                   <span v-else class="btn-view">📄</span>
                 </a>
@@ -660,25 +597,14 @@
 
             <div class="row">
               <div class="confirm">
-                <label for=""
-                  >Confirmo que acepto la información suministrada
+                <label for="">Confirmo que acepto la información suministrada
                 </label>
               </div>
               <div class="checks">
-                <input
-                  type="radio"
-                  name="confirmacion"
-                  v-model="formConfidencialidad.confirmacion"
-                  value="si"
-                />
+                <input type="radio" name="confirmacion" v-model="formConfidencialidad.confirmacion" value="si" />
                 <label for="">Si</label>
                 &nbsp;
-                <input
-                  type="radio"
-                  name="confirmacion"
-                  v-model="formConfidencialidad.confirmacion"
-                  value="no"
-                />
+                <input type="radio" name="confirmacion" v-model="formConfidencialidad.confirmacion" value="no" />
                 <label for="">No</label>
               </div>
             </div>
@@ -693,14 +619,8 @@
           <div class="card">
             <div class="row">
               <label>Email</label>
-              <input
-                type="text"
-                v-model="formConfidencialidad.email"
-                id="email"
-                placeholder="example@mail.com"
-                required
-                readonly
-              />
+              <input type="text" v-model="formConfidencialidad.email" id="email" placeholder="example@mail.com" required
+                readonly />
               <span v-if="!isValidEmail" style="color: red">
                 Please place a valid email.
               </span>
@@ -708,103 +628,53 @@
             <div class="row">
               <label>Disabilities</label>
               <div class="discapacidades">
-                <multiselect
-                  v-model="formConfidencialidad.disability"
-                  :options="discapacidades"
-                  :multiple="true"
-                  :close-on-select="false"
-                  :clear-on-select="false"
-                  :preserve-search="true"
-                  @update="checkOptions"
-<<<<<<< HEAD
-                  placeholder="Select options"
-=======
-                  placeholder="Selecciona opciones"
->>>>>>> 3565194fd85025d6d724aab66edb08882f101a7a
-                  label="name_en"
-                  value="name_en"
-                  track-by="name_en"
-                />
+                <multiselect v-model="formConfidencialidad.disability" :options="discapacidades" :multiple="true"
+                  :close-on-select="false" :clear-on-select="false" :preserve-search="true" @update="checkOptions"
+                  placeholder="Select options" label="name_en" value="name_en" track-by="name_en" />
                 <br v-if="isOtroSelected" />
-                <input
-                  v-if="isOtroSelected"
-                  type="text"
-                  id="textfield"
-                  v-model="textFieldValue"
-                  placeholder="Which other"
-                  required
-                />
+                <input v-if="isOtroSelected" type="text" id="textfield" v-model="textFieldValue"
+                  placeholder="Which other" required />
               </div>
             </div>
 
             <div class="row">
               <label for="">Full Name</label>
-              <input
-                type="text"
-                placeholder="Enter your name"
-                id="fullname"
-                v-model="formConfidencialidad.name"
-                required
-              />
+              <input type="text" placeholder="Enter your name" id="fullname" v-model="formConfidencialidad.name"
+                required />
             </div>
             <div class="row">
               <label for="identification">Document, DNI, ID o Passport:</label>
-              <input
-                type="text"
-                v-model="formConfidencialidad.document"
-                @input="validateIdentification"
-                minlength="6"
-                maxlength="20"
-                id="document"
-                placeholder="Enter your document"
-                required
-              />
-              <span v-if="!isValidId" style="color: red"
-                >Please place a valid document.</span
-              >
+              <input type="text" v-model="formConfidencialidad.document" @input="validateIdentification" minlength="6"
+                maxlength="20" id="document" placeholder="Enter your document" required />
+              <span v-if="!isValidId" style="color: red">Please place a valid document.</span>
             </div>
             <div class="row phone">
               <label for="phone">Phone Number:</label>
               <div class="phone-input">
-                <vue-tel-input
-                  v-model="formConfidencialidad.phoneNumber"
-                  mode="international"
-                  @input="handleInput"
+                <vue-tel-input v-model="formConfidencialidad.phoneNumber" mode="international" @input="handleInput"
                   :inputOptions="{
                     inputClass: 'vue-tel-input__input',
                     type: 'tel',
                     pattern: '[0-9]{10}',
                     maxlength: '10',
-                  }"
-                  style="
+                  }" style="
                     width: 100%;
                     line-height: normal;
                     display: flex;
                     align-items: center;
                     height: 42px;
-                  "
-                  required
-                ></vue-tel-input>
+                  " required></vue-tel-input>
               </div>
             </div>
             <div class="row">
               <label for="address">Adress:</label>
-              <input
-                type="text"
-                id="address"
-                v-model="formConfidencialidad.address"
-                placeholder="Enter your adress"
-              />
+              <input type="text" id="address" v-model="formConfidencialidad.address" placeholder="Enter your adress" />
             </div>
             <div class="row">
               <label for="country">Country:</label>
               <select id="country" v-model="formConfidencialidad.country">
                 <option value="" disabled selected>Select a county</option>
-                <option
-                  v-for="(country, index) in countries"
-                  :key="index"
-                  :value="country.countryName"
-                >
+                <option v-for="(country, index) in countries" :key="index" :value="country.countryName">
                   {{ country.countryName }}
                 </option>
               </select>
@@ -814,22 +684,12 @@
                 Upload an ID document (PDF or image):
               </label>
 
-              <input
-                type="file"
-                class="file-input"
-                id="fileInput"
-                accept=".pdf, image/*"
-                @change="handleFileChange"
-              />
+              <input type="file" class="file-input" id="fileInput" accept=".pdf, image/*" @change="handleFileUpload" />
 
               <div v-if="formConfidencialidad.fileUrl" class="file-preview">
                 <a :href="formConfidencialidad.fileUrl" target="_blank">
                   <span v-if="isImage(formConfidencialidad.fileUrl)">
-                    <img
-                      :src="formConfidencialidad.fileUrl"
-                      alt="Documento cargado"
-                      class="file-thumbnail"
-                    />
+                    <img :src="formConfidencialidad.fileUrl" alt="Documento cargado" class="file-thumbnail" />
                   </span>
                   <span v-else class="btn-view">📄</span>
                 </a>
@@ -837,25 +697,14 @@
             </div>
             <div class="row">
               <div class="confirm">
-                <label for=""
-                  >I confirm that I accept the provided information
+                <label for="">I confirm that I accept the provided information
                 </label>
               </div>
               <div class="checks">
-                <input
-                  type="radio"
-                  name="confirmacion"
-                  v-model="formConfidencialidad.confirmacion"
-                  value="si"
-                />
+                <input type="radio" name="confirmacion" v-model="formConfidencialidad.confirmacion" value="si" />
                 <label for="">Yes</label>
                 &nbsp;
-                <input
-                  type="radio"
-                  name="confirmacion"
-                  v-model="formConfidencialidad.confirmacion"
-                  value="no"
-                />
+                <input type="radio" name="confirmacion" v-model="formConfidencialidad.confirmacion" value="no" />
                 <label for="">No</label>
               </div>
             </div>
@@ -1162,18 +1011,27 @@ export default defineComponent({
   /* Aquí probablemente falte el valor, debería ser por ejemplo 'padding: 1rem;' */
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
   /* Sombra ligera para la tarjeta */
-  background-image: url("./background.jpg"); /* Ruta de la imagen */
-  background-size: cover; /* Ajusta la imagen para cubrir todo el fondo */
-  background-position: center; /* Centra la imagen en el fondo */
-  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  background-image: url("./background.jpg");
+  /* Ruta de la imagen */
+  background-size: cover;
+  /* Ajusta la imagen para cubrir todo el fondo */
+  background-position: center;
+  /* Centra la imagen en el fondo */
+  background-repeat: no-repeat;
+  /* Evita que la imagen se repita */
 }
 
 .content {
-  background-image: url("./background.jpg"); /* Ruta de la imagen */
-  background-size: cover; /* Ajusta la imagen para cubrir todo el fondo */
-  background-position: center; /* Centra la imagen en el fondo */
-  background-repeat: no-repeat; /* Evita que la imagen se repita */
+  background-image: url("./background.jpg");
+  /* Ruta de la imagen */
+  background-size: cover;
+  /* Ajusta la imagen para cubrir todo el fondo */
+  background-position: center;
+  /* Centra la imagen en el fondo */
+  background-repeat: no-repeat;
+  /* Evita que la imagen se repita */
 }
+
 .row {
   display: grid;
   /* Usa el modelo de caja grid */
@@ -1201,7 +1059,7 @@ select {
   /* Ancho completo para multiselect y select */
 }
 
-.row > *:not(input) {
+.row>*:not(input) {
   padding-left: 0 !important;
   padding-right: 0 !important;
   /* Ajuste del padding para todos los elementos dentro de .row, excluyendo input */
@@ -1231,16 +1089,20 @@ multiselect {
 
 .file-row {
   display: flex;
-  align-items: center; /* Alinea verticalmente todos los elementos */
-  gap: 15px; /* Espacio entre elementos */
+  align-items: center;
+  /* Alinea verticalmente todos los elementos */
+  gap: 15px;
+  /* Espacio entre elementos */
 }
 
 .file-label {
-  white-space: nowrap; /* Evita que el texto del label se divida en varias líneas */
+  white-space: nowrap;
+  /* Evita que el texto del label se divida en varias líneas */
 }
 
 .file-input {
-  flex-grow: 1; /* Permite que el input se ajuste al espacio disponible */
+  flex-grow: 1;
+  /* Permite que el input se ajuste al espacio disponible */
 }
 
 .file-preview {
