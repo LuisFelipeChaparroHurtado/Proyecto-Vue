@@ -382,4 +382,47 @@ button:hover {
   color: green;
   margin-top: 10px;
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .edit-profile-container {
+    width: 90%; /* Reduce container width for smaller screens */
+    padding: 10px;
+  }
+
+  .profile-grid {
+    flex-direction: column; /* Stack profile pic and form vertically */
+    align-items: center;
+    gap: 20px;
+  }
+
+  .profile-pic-section {
+    flex: none; /* No need for flex here, stack vertically */
+  }
+
+  .profile-pic {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-form {
+    width: 100%; /* Ensure the form takes full width on small screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-pic {
+    width: 80px;
+    height: 80px; /* Reduce image size on very small screens */
+  }
+
+  input,
+  button {
+    padding: 8px; /* Adjust padding to fit better on small screens */
+  }
+
+  .form-group {
+    margin-bottom: 10px; /* Reduce margin between form groups */
+  }
+}
 </style>
