@@ -1,16 +1,25 @@
 <template>
-  <div class="admin-dashboard" v-if="selectedLanguage === 'es'" :class="textSizeClass">
+  <div
+    class="admin-dashboard"
+    v-if="selectedLanguage === 'es'"
+    :class="textSizeClass"
+  >
     <h2>Panel de Administración</h2>
 
     <div class="profile-section">
       <div class="profile-pic-wrapper">
-        <img :src="photoURL || 'https://registration-c5bcd.web.app/profile_default.png'
-          " alt="Foto de perfil" class="profile-pic" />
+        <img
+          :src="
+            photoURL || 'https://registration-c5bcd.web.app/profile_default.png'
+          "
+          alt="Foto de perfil"
+          class="profile-pic"
+        />
       </div>
     </div>
 
     <div class="centradoBoton" :class="textSizeClass">
-      <button class="view-btn" @click="goToRegister" :class="textSizeClass">
+      <button class="delete-btn" @click="goToRegister" :class="textSizeClass">
         Agregar Usuario
       </button>
       <button class="view-btn" @click="goToEditProfile" :class="textSizeClass">
@@ -52,22 +61,56 @@
             <td>{{ user.email }}</td>
             <td>{{ formatDate(user.createdAt) }}</td>
             <td v-if="user.email !== loggedInUserEmail">
-              <button class="view-btn" @click="fetchUserAdvances(user.id, user.firstName)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                @click="fetchUserAdvances(user.id, user.firstName)"
+                :class="textSizeClass"
+              >
                 Ver Avances
               </button>
-              <button class="view-btn" v-if="user.editing" @click="saveUser(user)" :class="textSizeClass">
+              <button
+                class="view-btn"
+                v-if="user.editing"
+                @click="saveUser(user)"
+                :class="textSizeClass"
+              >
                 Guardar
               </button>
-              <button class="delete-btn" v-if="user.editing" @click="cancelEdit(user)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                v-if="user.editing"
+                @click="cancelEdit(user)"
+                :class="textSizeClass"
+              >
                 Cancelar
               </button>
-              <button class="edit-btn" v-else @click="editUser(user)" :class="textSizeClass">
+              <button
+                class="view-btn"
+                v-else
+                @click="editUser(user)"
+                :class="textSizeClass"
+              >
                 Editar
               </button>
-              <button class="delete-btn" @click="confirmDelete(user.id)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                @click="descargar_cv(user.id)"
+                :class="textSizeClass"
+              >
+                Descargar CV
+              </button>
+              <button
+                class="view-btn"
+                @click="confirmDelete(user.id)"
+                :class="textSizeClass"
+              >
                 Eliminar
               </button>
-              <button class="view-btn" @click="toggleBlockUser(user)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                @click="toggleBlockUser(user)"
+                :class="textSizeClass"
+              >
                 {{ user.isBlocked ? "Desbloquear" : "Bloquear" }}
               </button>
             </td>
@@ -103,13 +146,22 @@
       </div>
     </div>
   </div>
-  <div class="admin-dashboard" v-if="selectedLanguage === 'en'" :class="textSizeClass">
+  <div
+    class="admin-dashboard"
+    v-if="selectedLanguage === 'en'"
+    :class="textSizeClass"
+  >
     <h2>Administration Panel</h2>
 
     <div class="profile-section">
       <div class="profile-pic-wrapper">
-        <img :src="photoURL || 'https://registration-c5bcd.web.app/profile_default.png'
-          " alt="Foto de perfil" class="profile-pic" />
+        <img
+          :src="
+            photoURL || 'https://registration-c5bcd.web.app/profile_default.png'
+          "
+          alt="Foto de perfil"
+          class="profile-pic"
+        />
       </div>
     </div>
 
@@ -156,22 +208,56 @@
             <td>{{ user.email }}</td>
             <td>{{ formatDate(user.createdAt) }}</td>
             <td v-if="user.email !== loggedInUserEmail">
-              <button class="view-btn" @click="fetchUserAdvances(user.id, user.firstName)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                @click="fetchUserAdvances(user.id, user.firstName)"
+                :class="textSizeClass"
+              >
                 View Previews
               </button>
-              <button class="view-btn" v-if="user.editing" @click="saveUser(user)" :class="textSizeClass">
+              <button
+                class="view-btn"
+                v-if="user.editing"
+                @click="saveUser(user)"
+                :class="textSizeClass"
+              >
                 Save
               </button>
-              <button class="delete-btn" v-if="user.editing" @click="cancelEdit(user)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                v-if="user.editing"
+                @click="cancelEdit(user)"
+                :class="textSizeClass"
+              >
                 Cancel
               </button>
-              <button class="edit-btn" v-else @click="editUser(user)" :class="textSizeClass">
+              <button
+                class="view-btn"
+                v-else
+                @click="editUser(user)"
+                :class="textSizeClass"
+              >
                 Edit
               </button>
-              <button class="delete-btn" @click="confirmDelete(user.id)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                @click="descargar_cv(user.id)"
+                :class="textSizeClass"
+              >
+                Resume CV
+              </button>
+              <button
+                class="view-btn"
+                @click="confirmDelete(user.id)"
+                :class="textSizeClass"
+              >
                 Delete
               </button>
-              <button class="view-btn" @click="toggleBlockUser(user)" :class="textSizeClass">
+              <button
+                class="delete-btn"
+                @click="toggleBlockUser(user)"
+                :class="textSizeClass"
+              >
                 {{ user.isBlocked ? "Unlock" : "Block" }}
               </button>
             </td>
@@ -419,6 +505,29 @@ export default {
       }
     };
 
+    const descargar_cv = async (userId) => {
+      try {
+        const userRef = doc(db, "users", userId); // 👉 consultamos el usuario por su ID
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const resumeURL = userSnap.data().resumeURL;
+
+          if (resumeURL) {
+            // 👉 Abre la hoja de vida en una nueva pestaña
+            window.open(resumeURL, "_blank");
+          } else {
+            alert("Este usuario no tiene hoja de vida registrada.");
+          }
+        } else {
+          alert("Usuario no encontrado.");
+        }
+      } catch (error) {
+        console.error("Error al obtener la hoja de vida:", error);
+        alert("Hubo un problema al intentar descargar la hoja de vida.");
+      }
+    };
+
     const cancelEdit = (user) => {
       user.editing = false;
     };
@@ -530,6 +639,7 @@ export default {
       formatDateModal,
       toggleBlockUser,
       photoURL,
+      descargar_cv
     };
   },
 };
@@ -717,7 +827,6 @@ a {
   font-size: 1.5rem;
   margin-bottom: 20px;
 }
-
 
 /* ======= MEDIA QUERIES PARA RESPONSIVIDAD ======= */
 @media (max-width: 768px) {

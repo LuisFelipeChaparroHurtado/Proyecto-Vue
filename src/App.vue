@@ -1,18 +1,22 @@
 <template>
-  <div
-    v-if="$route.path !== '/register' && $route.path !== '/'"
-    class="card image"
-  >
+  <!-- Imagen de fondo, excluida en /register y / -->
+  <div v-if="$route.path !== '/register' && $route.path !== '/'" class="card image">
     <img src="./assets/Fondo.jpg" alt="" />
   </div>
 
-  <div v-if="$route.path !== '/register' && $route.path !== '/'" class="header">
-    <!-- Botón de atrás (solo aparece en rutas de formularios) -->
-    <button v-if="isFormRoute" @click="$router.go(-1)" class="back-button">
+  <!-- Encabezado -->
+  <div class="header">
+    <!-- Botón de atrás, excluido en /register y / -->
+    <button
+      v-if="isFormRoute && $route.path !== '/' && $route.path !== '/register'"
+      @click="$router.go(-1)"
+      class="back-button"
+    >
       <font-awesome-icon :icon="['fas', 'arrow-left']" class="icon" />
       Atrás
     </button>
 
+    <!-- Configuraciones de texto e idioma, visibles en todas las rutas -->
     <div class="settings">
       <TextSizeSelector @size-changed="changeTextSize" />
       <ToggleLanguage
@@ -20,13 +24,16 @@
         @change="handleInput"
       />
     </div>
+    
   </div>
 
+  <!-- Vista del router -->
   <RouterView
     :text-size-class="textSize"
     :selectedLanguage="selectedLanguage"
   />
 </template>
+
 
 <script lang="ts">
 import { defineComponent, ref, computed } from "vue";
@@ -55,7 +62,8 @@ export default defineComponent({
         route.path.includes("/confidencialidad") ||
         route.path.includes("/consentimiento") ||
         route.path.includes("/editarPerfil") ||
-        route.path.includes("/subirArchivos")
+        route.path.includes("/subirArchivos") ||
+        route.path.includes("/")
       );
     });
 
@@ -115,5 +123,14 @@ export default defineComponent({
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.margen_derecha {
+  padding: 0 15% 0 0;
+}
+
+@media (max-width: 480px) {
+  .margen_derecha {
+  padding: 0 0 0 0;
+}
 }
 </style>

@@ -1,5 +1,6 @@
-<template>
-  <div class="register">
+<template class="register_res">
+  <div v-if="selectedLanguage === 'es'" :class="textSizeClass">
+    <div class="register">
     <h2>Crear Cuenta</h2>
     <form @submit.prevent="registerUser">
       <input v-model="firstName" type="text" placeholder="Nombres" required />
@@ -22,6 +23,33 @@
     </form>
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </div>
+  </div>
+  <div v-if="selectedLanguage === 'en'" :class="textSizeClass">
+    <div class="register">
+    <h2>Create Account</h2>
+    <form @submit.prevent="registerUser">
+      <input v-model="firstName" type="text" placeholder="Names" required />
+      <input v-model="lastName" type="text" placeholder="Surnames" required />
+      <input v-model="email" type="email" placeholder="Email" required />
+      <input v-model="password" type="password" placeholder="Password" required />
+      <input v-model="confirm_password" type="password" placeholder="Confirm Password" required />
+
+      <!-- Select para elegir el rol del usuario -->
+      <select v-model="role" required>
+        <option value="" disabled>Select role</option>
+        <option value="usuario">User</option>
+        <option value="admin">Administrator</option>
+      </select>
+
+      <div class="button-group">
+        <button type="submit">Register</button>
+        <button type="button" class="back-btn" @click="goToBack">Back</button>
+      </div>
+    </form>
+    <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
+  </div>
+  </div>
+  
 </template>
 
 <script>
@@ -31,7 +59,17 @@ import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
 export default {
-  setup() {
+  props: {
+    textSizeClass: {
+      type: String,
+      default: "medium-text",
+    },
+    selectedLanguage: {
+      type: String,
+      required: true,
+    },
+  },
+  setup(props) {
     const router = useRouter();
     const auth = getAuth();
     const db = getFirestore();
@@ -41,14 +79,54 @@ export default {
     const email = ref("");
     const password = ref("");
     const confirm_password = ref("");
-    const role = ref(""); // Nuevo campo para el rol
+    const role = ref("");
     const errorMessage = ref("");
 
+<<<<<<< HEAD
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
+=======
+    // Diccionario de traducciones
+    const translations = {
+      en: {
+        passwordsDoNotMatch: "Passwords do not match",
+        selectRole: "You must select a role",
+        userCreated: "User created successfully",
+        weakPassword:
+          "Password must be at least 8 characters, with uppercase, lowercase, number and special character",
+      },
+      es: {
+        passwordsDoNotMatch: "Las contraseñas no coinciden",
+        selectRole: "Debes seleccionar un rol",
+        userCreated: "Usuario creado correctamente",
+        weakPassword:
+          "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial",
+      },
+    };
+
+    // Función para obtener texto según idioma
+    const t = (key) => {
+      const lang = props.selectedLanguage;
+      return translations[lang][key] || key;
+    };
+
+    // Validar seguridad de contraseña
+    const isPasswordStrong = (passwordValue) => {
+      const regex =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^+=])[A-Za-z\d@$!%*?&#^+=]{8,}$/;
+      return regex.test(passwordValue);
+    };
+
+    // Registro de usuario
+>>>>>>> origin
     const registerUser = async () => {
       if (password.value !== confirm_password.value) {
-        errorMessage.value = "Las contraseñas no coinciden";
+        errorMessage.value = t("passwordsDoNotMatch");
+        return;
+      }
+
+      if (!isPasswordStrong(password.value)) {
+        errorMessage.value = t("weakPassword");
         return;
       }
       if (!passwordRegex.test(password.value)) {
@@ -58,7 +136,7 @@ export default {
       }
 
       if (!role.value) {
-        errorMessage.value = "Debes seleccionar un rol";
+        errorMessage.value = t("selectRole");
         return;
       }
 
@@ -70,24 +148,24 @@ export default {
           displayName: `${firstName.value} ${lastName.value}`,
         });
 
-        // Guardar usuario en Firestore con el rol seleccionado
         await setDoc(doc(db, "users", user.uid), {
           firstName: firstName.value,
           lastName: lastName.value,
           email: user.email,
-          role: role.value, // Se guarda el rol elegido por el admin
+          role: role.value,
           createdAt: new Date(),
         });
 
-        alert("Usuario creado correctamente");
-        router.push("/dashboard"); // Redirige al panel principal
+        alert(t("userCreated"));
+        router.push("/dashboard");
       } catch (error) {
         errorMessage.value = error.message;
       }
     };
 
+    // Volver al dashboard
     const goToBack = () => {
-      router.push("/dashboard"); // Redirige al login
+      router.push("/dashboard");
     };
 
     return {
@@ -105,22 +183,86 @@ export default {
 };
 </script>
 
+
+
 <style scoped>
 .register {
-  width: 500px;
+  width: 400px;
   margin: auto;
   padding: 20px;
   border: 1px solid #ddd;
-  text-align: center;
+  border-radius: 5px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
 }
-input, select {
+
+input {
   display: block;
   width: 100%;
   margin: 8px 0;
   padding: 10px;
 }
 
-/* Estilos para alinear los botones en una fila */
+.button-container {
+  text-align: center;
+  margin-top: 10px;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  width: 48%;
+}
+
+.error {
+  color: red;
+}
+
+/* MODAL */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  color: black;
+  border-radius: 10px;
+  text-align: center;
+  text-align: center;
+  width: 700px;
+}
+
+.modal-content button {
+  background: #dc3545;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.centrado-boton {
+  text-align: center;
+}
+
+.modal-content button {
+  background: #dc3545;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+}
+
 .button-group {
   display: flex;
   justify-content: space-between;
@@ -148,7 +290,63 @@ button {
   background: #6c757d; /* Color gris para el botón atrás */
 }
 
-.error {
-  color: red;
+.modal-content button {
+  background: #dc3545;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.centrado-boton {
+  text-align: center;
+}
+
+.modal-content button {
+  background: #dc3545;
+  color: white;
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.centrado-boton {
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  html, body, .register_res {
+    height: 100%;
+  }
+
+  .register_res {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .register {
+    margin: 0;
+    width: 385px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .button-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  input {
+    padding: 8px;
+  }
 }
 </style>

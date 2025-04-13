@@ -628,9 +628,25 @@
             <div class="row">
               <label>Disabilities</label>
               <div class="discapacidades">
+<<<<<<< HEAD
                 <multiselect v-model="formConfidencialidad.disability" :options="discapacidades" :multiple="true"
                   :close-on-select="false" :clear-on-select="false" :preserve-search="true" @update="checkOptions"
                   placeholder="Select options" label="name_en" value="name_en" track-by="name_en" />
+=======
+                <multiselect
+                  v-model="formConfidencialidad.disability"
+                  :options="discapacidades"
+                  :multiple="true"
+                  :close-on-select="false"
+                  :clear-on-select="false"
+                  :preserve-search="true"
+                  @update="checkOptions"
+                  placeholder="Select options"
+                  label="name_en"
+                  value="name_en"
+                  track-by="name_en"
+                />
+>>>>>>> origin
                 <br v-if="isOtroSelected" />
                 <input v-if="isOtroSelected" type="text" id="textfield" v-model="textFieldValue"
                   placeholder="Which other" required />
