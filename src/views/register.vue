@@ -82,10 +82,6 @@ export default {
     const role = ref("");
     const errorMessage = ref("");
 
-<<<<<<< HEAD
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-=======
     // Diccionario de traducciones
     const translations = {
       en: {
@@ -118,7 +114,6 @@ export default {
     };
 
     // Registro de usuario
->>>>>>> origin
     const registerUser = async () => {
       if (password.value !== confirm_password.value) {
         errorMessage.value = t("passwordsDoNotMatch");
@@ -127,11 +122,6 @@ export default {
 
       if (!isPasswordStrong(password.value)) {
         errorMessage.value = t("weakPassword");
-        return;
-      }
-      if (!passwordRegex.test(password.value)) {
-        errorMessage.value =
-          "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.";
         return;
       }
 

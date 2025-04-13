@@ -120,8 +120,6 @@ import {
 } from "firebase/firestore";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
-import { sendPasswordResetEmail } from "firebase/auth";
-
 
 export default {
   props: {
@@ -257,28 +255,6 @@ export default {
     const closeModal = () => {
       showModal.value = false;
     };
-    const resetPassword = async () => {
-      const auth = getAuth();
-
-      if (!email.value) {
-        modalTitle.value = "Correo requerido";
-        modalMessage.value = "Por favor, ingresa tu correo electrónico para restablecer tu contraseña.";
-        showModal.value = true;
-        return;
-      }
-
-      try {
-        await sendPasswordResetEmail(auth, email.value);
-        modalTitle.value = "Correo enviado";
-        modalMessage.value = "Te hemos enviado un correo con instrucciones para restablecer tu contraseña.";
-        showModal.value = true;
-      } catch (error) {
-        modalTitle.value = "Error";
-        modalMessage.value = "No se pudo enviar el correo de restablecimiento. " + error.message;
-        showModal.value = true;
-      }
-    };
-
 
     return {
       email,
@@ -376,7 +352,6 @@ button {
 .button-container {
   text-align: center;
 }
-
 
 .modal-content button {
   background: #dc3545;
