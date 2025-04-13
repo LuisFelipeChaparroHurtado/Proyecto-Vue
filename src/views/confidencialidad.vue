@@ -716,11 +716,7 @@
                   :clear-on-select="false"
                   :preserve-search="true"
                   @update="checkOptions"
-<<<<<<< HEAD
                   placeholder="Select options"
-=======
-                  placeholder="Selecciona opciones"
->>>>>>> 3565194fd85025d6d724aab66edb08882f101a7a
                   label="name_en"
                   value="name_en"
                   track-by="name_en"
